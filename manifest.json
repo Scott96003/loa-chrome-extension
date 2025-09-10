@@ -2,7 +2,7 @@
 // 必填
 "manifest_version": 3,
 "name": "天堂Boss List",
-"version": "1",
+"version": "20250910",
 // "default_locale": "zh_TW",
 // 建議
 "description": "天堂Boss提醒",
