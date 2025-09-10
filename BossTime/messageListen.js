@@ -285,17 +285,17 @@ isTaskRunning = false
 // 設定每秒執行一次
 setInterval(() => {
   const now = new Date();
+  const hours = now.getHours();
   const minutes = now.getMinutes();
-  const seconds = now.getSeconds();
-  console.log('// 每1000毫秒（1秒）檢查一次', minutes, seconds, bossTimeRanges)
+  console.log('// 每1000毫秒（1秒）檢查一次', minutes, minutes, bossTimeRanges)
   // 檢查是否為整點（0 分 0 秒）
 
-  if (isWithinTimeRange(minutes) == false) {
+  if (isWithinTimeRange(hours) == false) {
     // 檢查是否重複執行，確保只執行一次
     if (!isTaskRunning) {
       isTaskRunning = true;
       console.log('更新時間')
-      //SendToDC(0);
+      SendToDC(0);
       // 等待幾秒後重設旗標，防止短時間內重複執行
       setTimeout(() => {
         isTaskRunning = false;
