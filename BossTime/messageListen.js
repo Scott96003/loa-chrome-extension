@@ -277,7 +277,7 @@ function SendToDC(id, test=false) {
  * @returns {boolean} 如果時間在區間內，則回傳 true；否則回傳 false。
  */
 function isWithinTimeRange(hour) {
-  return hour >= bossTimeRanges[0] || hour < bossTimeRanges[1];
+  return (hour == bossTimeRanges[1])
 }
 
 bossTimeRanges = [0,23]
