@@ -21,7 +21,7 @@ var rebootTime = new Date('2024-01-04T12:00:00');
 // 過濾後的bossID
 var filterBossIDs = "";
 
-if (debug) {
+if (!debug) {
   console.log = function () {}; // 覆蓋 console.log，使其不執行任何操作
 }
 
