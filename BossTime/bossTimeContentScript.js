@@ -263,7 +263,7 @@ function sortListByRespawnTime() {
       }
     },
     {
-      name: '計算預估出身時間%',
+      name: '計算預估出生時間%',
       compare: (a, b) => {
         const now = Date.now();
         const getPercentage = (obj) => {
@@ -523,11 +523,7 @@ function findLostBoss(bossData, checkCount) {
   var aliveCount = 0;
   // 查看每一輪
   for (const segment of segments) {
-    if (segment.deathList.length <= bossCount) {
-      aliveCount += bossCount - segment.deathList.length;
-    } else {
-      break;
-    }
+    aliveCount += bossCount - segment.deathList.length;
   }
 
   // 輸出結果
@@ -825,7 +821,9 @@ function showTooltip(event, data) {
     msg += "<tr>";
     msg += "<td style='vertical-align: top;'>" + segment.start.getDate() + "(" + formatDateTime_Easy(segment.start, segment.end) + ")</td>";
     msg += "<td>";
-
+    if (needReboot == true) {
+      msg += "<div style='color: yellow;'>重新開機" +rebootTime+"</div>";
+    }
     segment.deathList.forEach(function(deathTime) {
       if (needReboot == true) {
         if (new Date(deathTime.death) > rebootTime) {
