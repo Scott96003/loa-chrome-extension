@@ -167,23 +167,8 @@ function confirmDateTime() {
   var confirmation = confirm("確定維修時間為" + selectedDateTime + "嗎,無法退回喔？");
   if (confirmation) {
     var now = new Date(selectedDateTime); // 获取当前时间
-
+    // 設定重開機時間
     rebootTime = now;
-    // 將bossData中的資料整理
-
-    bossListData.forEach(function(boss) {
-      const newDeathList = boss.deathList.filter(obj => {
-        const bossDeathDate = new Date(obj.death);
-        return bossDeathDate >= rebootTime;
-      })
-      boss.deathList = newDeathList
-    })
-
-    // 2. 使用 filter() 來篩選，保留 death 時間大於或等於截止時間的物件
-    const filteredBosses = bosses.filter(boss => {
-      const bossDeathDate = new Date(boss.death);
-      return bossDeathDate >= cutoffDate;
-    });
     //重新整理
     refresh(); 
   }
