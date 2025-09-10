@@ -287,7 +287,7 @@ setInterval(() => {
   const now = new Date();
   const hours = now.getHours();
   const minutes = now.getMinutes();
-  console.log('// 每1000毫秒（1秒）檢查一次', minutes, minutes, bossTimeRanges)
+  console.log('// 每1000毫秒（1秒）檢查一次', hours, minutes, bossTimeRanges)
   // 檢查是否為整點（0 分 0 秒）
 
   if (isWithinTimeRange(hours) == false) {
