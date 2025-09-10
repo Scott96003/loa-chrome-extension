@@ -1,0 +1,35 @@
+<!-- Copyright 2017 The Chromium Authors. All rights reserved.
+Use of this source code is governed by a BSD-style license that can be
+found in the LICENSE file. -->
+<html>
+  <head>
+    <title>Water Popup</title>
+    <style>
+      body {
+        text-align: center;
+      }
+
+      #hydrateImage {
+        width: 100px;
+        margin: 5px;
+      }
+
+      button {
+        margin: 5px;
+        outline: none;
+      }
+
+      button:hover {
+        outline: #80deea dotted thick;
+      }
+    </style>
+  </head>
+  <body>
+    <img src="./stay_hydrated.png" id="hydrateImage" />
+    <button id="send-message">SendMessage</button>
+    <button id="send-tabs-message">SendTabsMessage</button>
+
+    <!-- ⚠️ 重點：若有需要使用 JS 可在此載入 -->
+    <script src="index.js"></script>
+  </body>
+</html>

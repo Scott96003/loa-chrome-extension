@@ -1,0 +1,50 @@
+{
+// 必填
+"manifest_version": 3,
+"name": "天堂Boss List",
+"version": "1",
+// "default_locale": "zh_TW",
+// 建議
+"description": "天堂Boss提醒",
+
+// 擇一（browser_action / page_action ）或不填
+"action": {
+  "default_popup": "popup/popup.html",
+  "default_icon": "img/labour-day.png",
+  "default_title": "天堂Boss提醒"
+},
+"content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+"background": {
+    "service_worker": "background.js"
+  },
+
+"permissions": 
+[
+  "tabs",
+  "activeTab",
+  "storage"
+],
+"content_scripts" : 
+  [
+    {
+      "matches" : [ "https://discord.com/channels/1124664207921655830/1186526426770444329" ],
+      "run_at": "document_idle",
+      "js" : 
+        [ 
+          "js/jquery-3.7.1.min.js",
+          "content.js"
+        ]
+    },
+    {
+      "matches" : [ "*://*/bossTime/bossTime.html" ],
+      "run_at": "document_idle",
+      "js" : 
+        [ 
+          "js/jquery-3.7.1.min.js",
+          "bossTime/bossTimeContentScript.js"
+        ]
+    }
+  ]
+}

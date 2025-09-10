@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOA-BossTime</title>
+    <style>
+        :root {
+            --boss-part1: #20eebfd4;
+            --boss-half: #6e96ddd4;           /* 一半 */
+            --boss-quarter: #6529b4bd;        /* 3/4 */
+            --boss-close-to: #a3306ae0; /* 9/10 */
+            --boss-double: #9e2b2bc7;    /* 雙出 */
+        }
+        body {
+            font-size: 16px; /* 設置整個頁面的字體大小 */
+            background-color: #000; /* 黑色背景 */
+            color: #f2f2f2; /* 淡灰色字體 */
+        }
+        input, button {
+            background-color: #333; /* 深色背景 */
+            color: #f2f2f2; /* 淡色字體 */
+            border: 1px solid #555; /* 深灰色邊框 */
+        }
+        input::placeholder {
+            color: #aaa; /* 淺灰色的提示文字 */
+        }
+        .part1-time {
+            background-color: var(--boss-part1);
+            color: #000; /* 黑色字體 */
+        }
+        .half-time {
+            background-color: var(--boss-half);
+            color: #000; /* 黑色字體 */
+        }
+        .quarter-time {
+            background-color: var(--boss-quarter);
+            color: #fff; /* 白色字體 */
+        }
+        .approaching {
+            background-color: var(--boss-close-to);
+            color: #fff; /* 白色字體 */
+        }
+        .over-time {
+            background-color: #d9d9d9;
+            color: #000; /* 黑色字體 */
+        }
+        .double-boss {
+            background-color: var(--boss-double);
+            color: #fff; /* 白色字體 */
+        }
+        .message-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #222; /* 深色背景 */
+            border-top: 1px solid #555; /* 深灰色邊框 */
+            padding: 10px;
+            display: none;
+            resize: both;
+            overflow: auto;
+            z-index: 1000;
+            color: #f2f2f2; /* 淡灰色字體 */
+        }
+        .message-container:hover {
+            overflow: auto;
+        }
+        #bossList {
+            margin-bottom: 320px; /* 給表格底部留出空間，避免被 messageContainer 擋住 */
+        }
+        #toggleMessageContainer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 25px;
+            background-color: #555; /* 深灰色背景 */
+            color: #f2f2f2; /* 淡灰色字體 */
+            border-top: 1px solid #777;
+            text-align: center;
+            z-index: 1001;
+        }
+        .floating-message {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background-color: #333; /* 深灰色背景 */
+          color: #fff; /* 白色字體 */
+          padding: 10px 20px;
+          border-radius: 5px;
+          display: none;
+          z-index: 9999;
+        }
+        .tooltip {
+          position: absolute;
+          background-color: #000; /* 黑色背景 */
+          color: #fff; /* 白色字體 */
+          padding: 5px;
+          border-radius: 5px;
+        }
+        .datetime-container {
+          position: fixed;
+          top: 5%;
+          left: 20%;
+          transform: translate(-50%, -50%);
+          background-color: #222; /* 深色背景 */
+          padding: 20px;
+          border: 1px solid #555; /* 深灰色邊框 */
+          box-shadow: 0 0 10px rgba(255,255,255,0.1); /* 微光 */
+          z-index: 1000;
+          color: #f2f2f2; /* 淡灰色字體 */
+        }
+        @keyframes blink {
+            0% { background-color: rgba(255, 255, 0, 0.5); } /* 淡黃色 */
+            50% { background-color: rgba(255, 255, 0, 0); } /* 完全透明 */
+            100% { background-color: rgba(255, 255, 0, 0.5); } /* 淡黃色 */
+        }
+
+        .blinking {
+            animation: blink 2s infinite; /* 將持續時間改為 2s */
+        }
+
+    </style>
+    <script type = "text/javascript" src = "bossList.js"></script>
+    <script type = "text/javascript" src = "bossTimeContentScript.js"></script>
+    <script type = "text/javascript" src = "messageListen.js"></script>
+    <script type = "text/javascript" src = "onloading.js"></script>
+</head>
+<body>
+
+    <input type="number" id="bossid" placeholder="bossID">
+    <input type="text" id="bossName" placeholder="頭目名稱">
+    <input type="number" id="respawnTime" placeholder="重生時間(小時)">
+    <button id="btn_addToBossList">新增</button>
+    <button id="btn_resetData">重置預設</button>
+    <br>
+    <button id="btn_refresh">重整</button>
+    <button id="btn_refreshDeathTime">重新獲取死亡時間</button>
+    <button id="btn_reboot">維修重置時間</button>
+    <div>
+    音量大小:<input type="range" id="percentageSlider" min="0" max="100" step="1" value="50">
+    <span id="percentageDisplay">50%</span>
+    <span style="color: var(--boss-part1)">重生已過1/4  </span>
+    <span style="color: var(--boss-half)">重生已過1/2  </span>
+    <span style="color: var(--boss-quarter)">  重生已過3/4  </span>
+    <span style="color: var(--boss-close-to)">  重生已過9/10  </span>
+    <span style="color: var(--boss-double)">  兩輪都還沒出  </span>
+    </div>
+    <div id="filterButtons">
+        <button data-boss-name="">顯示全部</button>
+        <button data-boss-name="1,2,91202,91605,91516">三大龍</button>
+        <button data-boss-name="45955,45956,45957,45958,45959,45960,45961,45962">魂塔長老</button>
+        <button data-boss-name="81082,45685,45674,45625,45753">陣營Boss</button>
+        <button data-boss-name="45513,45547,45606,45650,45652,45653,45654,45618,45672,45673,46220,46271">傲慢之塔</button>
+
+        <button data-boss-name="45614,45601,45617,,45600,99513,45545,45488,45678,45680">野外重要Boss</button>
+        <button data-boss-name="45955,45956,45957,45958,45959,45960,45961,45962,81082,45685,45674,45625,45753,45672,45673,45618,45653,45614,45801,46142,46141,99085,99086,99065">重點必須拿下</button>
+    </div>
+    <table id="bossList">
+        <thead>
+            <tr>
+                <th>操作</th>
+                <th>頭目名稱</th>
+                <th>間隔(h)</th>
+                <th>死亡時間</th>
+                <th>擊殺血盟</th>
+                <th>預估出生時間</th>
+                <th>可能重生次數</th>
+                <th>距離上次死亡</th>
+                <th>id</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <div class="message-container" id="messageContainer" style="display:block;"></div>
+    <button id="toggleMessageContainer">顯示訊息</button>
+    <div class="floating-message" id="floatingMessage">
+      This is a floating message!
+    </div>
+
+    <div id="datetimePicker" class="datetime-container" style="display: none;">
+      <label for="datetime">填入維修日期和時間:</label><br>
+      <input type="datetime-local" id="datetime" name="datetime"><br><br>
+      <button id="confirmBtn">確認</button>
+      <button id="cancelBtn">取消</button>
+    </div>
+    <div id="datetimePickerForDeathTime" class="datetime-container" style="display: none;">
+      <label for="datetime">填入想要獲取時間點之後的死亡時間:</label><br>
+      <input type="datetime-local" id="datetimeForDeathTime" name="datetime"><br><br>
+      <button id="confirmBtnForDeathTime">確認</button>
+      <button id="cancelBtnForDeathTime">取消</button>
+    </div>
+</body>
+
+</html>
