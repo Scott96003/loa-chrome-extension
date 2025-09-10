@@ -20,13 +20,7 @@ const baseTime = '2024-01-04T12:00:00';
 var rebootTime = new Date('2024-01-04T12:00:00');
 // 過濾後的bossID
 var filterBossIDs = "";
-// 設定是否為debug模式
-const debug = true;
-// WEBHOOK_URL 
-// WEBHOOK_URL 
-//const WEBHOOK_URL = 'https://discord.com/api/webhooks/1411550614986424392/9_SupvoWU6yPbuSXoZcOsBn-rHKXvJi_ATrpjl86_1_CVaE5yQFUYKp5S946tpX9NM9s';
-// const WEBHOOK_URL = 'https://discord.com/api/webhooks/1414536862407594124/xHQ6G7MQEaHMJvEd1BeIjkXmcmK4SuSk0WJE6YYKlt-2VlCqufUFt-4er7oERIeyt_7G';
-const WEBHOOK_URL = ''
+
 if (debug) {
   console.log = function () {}; // 覆蓋 console.log，使其不執行任何操作
 }
