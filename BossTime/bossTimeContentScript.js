@@ -369,7 +369,7 @@ function updateBossRemainingTime() {
 
         // 預計重生次數
         // 找出是否有遺漏重生的boss
-        result = findLostBoss(bossData, 8);
+        result = findLostBoss(bossData, 20);
         bossData.result = result;
 
         // 可能重生次數
