@@ -369,7 +369,7 @@ function updateBossRemainingTime() {
 
         // 預計重生次數
         // 找出是否有遺漏重生的boss
-        result = findLostBoss(bossData, 20);
+        result = findLostBoss(bossData);
         bossData.result = result;
 
         // 可能重生次數
@@ -455,13 +455,13 @@ function updateBossRemainingTime() {
 }
 
 // 找出缺失的時間區段
-function findLostBoss(bossData, checkCount) {
+function findLostBoss(bossData) {
   const bossDurationHour = bossData.respawnTime;
   const deathTime = bossData.deathList;
   const segmentDuration = bossDurationHour * 60 * 60 * 1000; // 每個區段的持續時間(轉為毫秒)
 
 
-  const startPoint = getSpawnTime(new Date().getTime() - (segmentDuration*checkCount), bossDurationHour); // 指定的開始時間
+  const startPoint = getSpawnTime(rebootTime, bossDurationHour); // 指定的開始時間
 
   // console.log(bossData.bossName, "StartPoint", startPoint, "segmentDuration", segmentDuration, "durationCount", durationCount)
   // 生成區段
@@ -504,7 +504,9 @@ function findLostBoss(bossData, checkCount) {
   for (const segment of segments) {
     aliveCount += bossCount - segment.deathList.length;
   }
-
+  if (aliveCount > 3) {
+    aliveCount = 3;
+  }
   // 輸出結果
   // console.log(bossData.bossName, bossData.id)
   // console.log("needBossCount:", needBossCount)
