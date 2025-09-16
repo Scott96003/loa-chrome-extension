@@ -460,59 +460,44 @@ function findLostBoss(bossData) {
   const deathTime = bossData.deathList;
   const segmentDuration = bossDurationHour * 60 * 60 * 1000; // 每個區段的持續時間(轉為毫秒)
 
-
   const startPoint = getSpawnTime(rebootTime, bossDurationHour); // 指定的開始時間
 
-  // console.log(bossData.bossName, "StartPoint", startPoint, "segmentDuration", segmentDuration, "durationCount", durationCount)
   // 生成區段
   const segments = [];
   let currentSegmentStart = new Date(startPoint);
 
   // 生成區段直到當前時間
   const currentTime = new Date()
+
   while (currentSegmentStart < currentTime) {
       const segmentEnd = new Date(currentSegmentStart.getTime() + segmentDuration);
-      let matchingTimes = bossData.deathList.filter(dl => new Date(dl.death) >= currentSegmentStart &&  new Date(dl.death) < segmentEnd);
+      let segmentTimes = bossData.deathList.filter(dl => new Date(dl.death) >= currentSegmentStart &&  new Date(dl.death) < segmentEnd);
       // 拿取得時段開始時間必須要大於rebootTime
-      if (currentSegmentStart > rebootTime) {
-        segments.push({ start: currentSegmentStart, end: segmentEnd, deathList: matchingTimes});
-      }
+      segments.push({ start: currentSegmentStart, end: segmentEnd, deathList: segmentTimes});
+      
       currentSegmentStart = segmentEnd; // 更新為下一個區段的開始時間
   }
+  // 取得reboot 之後的死亡次數
+  let matchingTimes = bossData.deathList.filter(dl => new Date(dl.death) > rebootTime);
+
+
 
   segments.sort((a,b) => b.start - a.start);
-  
-  // 找出沒有在時間陣列中的區段
-  const missingSegments = segments.filter(segment => { 
-      let matchingTimes = deathTime.filter(data => new Date(data.death) >= segment.start && new Date(data.death) < segment.end);
-      segment.deathList = matchingTimes
-      return (matchingTimes >= 0)
-  });
 
-  var dieCount = 0
-  segments.forEach(function(segment) {
-      dieCount += segment.deathList.length
-  })
+  // Boss 死亡次數
+  var dieCount = matchingTimes.length
+
 
 
   // 取得boss重生次數, 為區段* Boss每輪數量
   var bossCount = getBossCount(bossData)
 
 
-  var aliveCount = 0;
-  // 查看每一輪
-  for (const segment of segments) {
-    aliveCount += bossCount - segment.deathList.length;
-  }
+  var aliveCount = (segments.length * bossCount) - dieCount;
+
   if (aliveCount > 3) {
     aliveCount = 3;
   }
-  // 輸出結果
-  // console.log(bossData.bossName, bossData.id)
-  // console.log("needBossCount:", needBossCount)
-  // console.log(startPoint);
-  // console.log(segments, dieCount);
-  // console.log(aliveCount);
 
   return {rebornCount: aliveCount, segments: segments};
 }
@@ -802,12 +787,9 @@ function showTooltip(event, data) {
     msg += "<tr>";
     msg += "<td style='vertical-align: top;'>" + segment.start.getDate() + "(" + formatDateTime_Easy(segment.start, segment.end) + ")</td>";
     msg += "<td>";
-    if (needReboot == true) {
-      msg += "<div style='color: yellow;'>重新開機" +rebootTime+"</div>";
-    }
     segment.deathList.forEach(function(deathTime) {
       if (needReboot == true) {
-        if (new Date(deathTime.death) > rebootTime) {
+        if (new Date(deathTime.death) < rebootTime) {
           msg += "<div style='color: yellow;'>重新開機" +rebootTime+"</div>";
           needReboot = false
         }
@@ -826,6 +808,10 @@ function showTooltip(event, data) {
       msg += "</div>";  
       
     })
+    //如果紀錄都刷完,還沒顯示
+    if (needReboot == true) {
+      msg += "<div style='color: yellow;'>重新開機" +rebootTime+"</div>";
+    }
     msg += "</td>";
     msg += "</tr>"
   })
