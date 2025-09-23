@@ -781,39 +781,42 @@ function showTooltip(event, data) {
 
   msg += "<table>";
   segments.forEach(function(segment) {
-    var needReboot = (rebootTime >= segment.start &&  rebootTime < segment.end)
+    // 只顯示到維修的資料
+    if (rebootTime < segment.end) {
+      var needReboot = (rebootTime >= segment.start &&  rebootTime < segment.end)
 
 
-    msg += "<tr>";
-    msg += "<td style='vertical-align: top;'>" + segment.start.getDate() + "(" + formatDateTime_Easy(segment.start, segment.end) + ")</td>";
-    msg += "<td>";
-    segment.deathList.forEach(function(deathTime) {
-      if (needReboot == true) {
-        if (new Date(deathTime.death) < rebootTime) {
-          msg += "<div style='color: yellow;'>重新開機" +rebootTime+"</div>";
-          needReboot = false
+      msg += "<tr>";
+      msg += "<td style='vertical-align: top;'>" + segment.start.getDate() + "(" + formatDateTime_Easy(segment.start, segment.end) + ")</td>";
+      msg += "<td>";
+      segment.deathList.forEach(function(deathTime) {
+        if (needReboot == true) {
+          if (new Date(deathTime.death) < rebootTime) {
+            msg += "<div style='color: yellow;'>重新開機" +rebootTime+"</div>";
+            needReboot = false
+          }
         }
-      }
-      if (deathTime.isActive) {
-        msg += "<div style='color: red;'>";
-      } else {
-        msg += "<div>";
-      }
-      msg += deathTime.death;
+        if (deathTime.isActive) {
+          msg += "<div style='color: red;'>";
+        } else {
+          msg += "<div>";
+        }
+        msg += deathTime.death;
 
-      msg += deathTime.emblem;
-      if ([1,2].includes(deathTime.type || 0)) {
-        msg += " " + (deathTime.bossName || "null");
+        msg += deathTime.emblem;
+        if ([1,2].includes(deathTime.type || 0)) {
+          msg += " " + (deathTime.bossName || "null");
+        }
+        msg += "</div>";  
+        
+      })
+      //如果紀錄都刷完,還沒顯示
+      if (needReboot == true) {
+        msg += "<div style='color: yellow;'>重新開機" +rebootTime+"</div>";
       }
-      msg += "</div>";  
-      
-    })
-    //如果紀錄都刷完,還沒顯示
-    if (needReboot == true) {
-      msg += "<div style='color: yellow;'>重新開機" +rebootTime+"</div>";
+      msg += "</td>";
+      msg += "</tr>"
     }
-    msg += "</td>";
-    msg += "</tr>"
   })
   msg += "</table>";
 
