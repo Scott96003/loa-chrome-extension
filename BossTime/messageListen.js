@@ -83,7 +83,11 @@ function updateBossData(bossData) {
         var b_deathTime = new Date(b.death).getTime();
         return b_deathTime - a_deathTime;
       });
-      bossListData[index].deathList = bossListData[index].deathList.slice(0, 100); // 只取前x筆資料 
+      // 只取維修後的資料
+      bossListData[index].deathList = bossListData[index].deathList.filter(item => {
+        return new Date(item.death) > rebootTime
+      })
+      // bossListData[index].deathList = bossListData[index].deathList.slice(0, 100); // 只取前x筆資料 
 
 
       // 在這裡進行當前死亡時間跟準備新增的時間做大小比較
@@ -120,7 +124,7 @@ function addMessage(bossData) {
     drawMessage(message);
     showfloatingMessage(message);
 
-    if (WEBHOOK_URL != "") {
+    if (WEBHOOK_URL.length > 0) {
       setTimeout(() => {
           SendToDC(parseInt(bossData.id));
       }, 2000);

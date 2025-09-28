@@ -134,7 +134,9 @@ function SendToDC(id, test=false) {
     })
     msg += formatTableForDiscord(tableData)
     if (test == false) {
-      sendTextWebhook(WEBHOOK_URL, msg);
+      WEBHOOK_URL.forEach(function(url) {
+        sendTextWebhook(url, msg);
+      })
     } else {
       console.log(msg)
     }

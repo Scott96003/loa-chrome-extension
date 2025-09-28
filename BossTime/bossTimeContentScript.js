@@ -20,7 +20,7 @@ const baseTime = '2024-01-04T12:00:00';
 var rebootTime = new Date('2024-01-04T12:00:00');
 // 過濾後的bossID
 var filterBossIDs = "";
-
+var refreshActive = false;
 if (!debug) {
   console.log = function () {}; // 覆蓋 console.log，使其不執行任何操作
 }
@@ -145,10 +145,19 @@ function addBossTR(data) {
 
 
 function refresh() {
-  updateBossRemainingTime();
-  sortListByRespawnTime();
-  filterTable(filterBossIDs);
-  saveToLocalStorage(); 
+  if (refreshActive == false) {
+    refreshActive = true;
+    updateBossRemainingTime();
+    sortListByRespawnTime();
+    filterTable(filterBossIDs);
+
+    setTimeout(() => {
+      saveToLocalStorage();
+      refreshActive = false;
+    }, 10000);
+  }
+
+
 }
 
 
