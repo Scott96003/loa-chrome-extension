@@ -20,7 +20,7 @@ const baseTime = '2024-01-04T12:00:00';
 var rebootTime = new Date('2024-01-04T12:00:00');
 // 過濾後的bossID
 var filterBossIDs = "";
-var refreshActive = false;
+
 if (!debug) {
   console.log = function () {}; // 覆蓋 console.log，使其不執行任何操作
 }
@@ -143,21 +143,13 @@ function addBossTR(data) {
   });
 }
 
-
+// 刷新數據
 function refresh() {
-  if (refreshActive == false) {
-    refreshActive = true;
-    updateBossRemainingTime();
-    sortListByRespawnTime();
-    filterTable(filterBossIDs);
-
-    setTimeout(() => {
-      saveToLocalStorage();
-      refreshActive = false;
-    }, 10000);
-  }
-
-
+  console.log('刷新數據');
+  updateBossRemainingTime();
+  sortListByRespawnTime();
+  filterTable(filterBossIDs);
+  saveToLocalStorage();
 }
 
 
@@ -977,4 +969,19 @@ function getOldData(myDayTime) {
     });
   });
 
+}
+
+
+function throttle(func, delay = 1000) {
+  let inThrottle;
+  return function(...args) {
+    const context = this;
+    if (!inThrottle) {
+      func.apply(context, args);
+      inThrottle = true;
+      setTimeout(() => {
+        inThrottle = false;
+      }, delay);
+    }
+  };
 }

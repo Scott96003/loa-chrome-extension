@@ -102,7 +102,9 @@ function updateBossData(bossData) {
         }
         // 增加死亡訊息
         addMessage(bossData);
-        refresh();
+
+        // 使用節流方法實現refresh
+        throttle(refresh(), 500);
       }
     }
   });
