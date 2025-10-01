@@ -551,32 +551,25 @@ function getTimeDiff(bossData) {
   }
   bossData.deathList = bossData.deathList.filter(item => item.emblem !== undefined);
 
+  var timeB = rebootTime;
   if (bossData.deathList.length > 1) {
-    var timeB = bossData.deathList[0].death
-    const timeDifference = new Date() - new Date(timeB);
-    var timeDiffFix = Math.abs(timeDifference);  // 時間差以毫秒為單位
-
-    // 將毫秒轉換為小時、分鐘、秒，或按你需求格式化
-    const diffInSeconds = Math.floor(timeDiffFix / 1000);
-    const diffInMinutes = Math.floor(timeDiffFix / (1000 * 60));
-    const diffInHours = Math.floor(timeDiffFix / (1000 * 60 * 60));
-
-    return {
-        milliseconds: timeDiffFix,
-        seconds: diffInSeconds,
-        minutes: diffInMinutes,
-        hours: diffInHours
-    };
+    timeB = bossData.deathList[0].death
   }
 
+  const timeDifference = new Date() - new Date(timeB);
+  var timeDiffFix = Math.abs(timeDifference);  // 時間差以毫秒為單位
+
+  // 將毫秒轉換為小時、分鐘、秒，或按你需求格式化
+  const diffInSeconds = Math.floor(timeDiffFix / 1000);
+  const diffInMinutes = Math.floor(timeDiffFix / (1000 * 60));
+  const diffInHours = Math.floor(timeDiffFix / (1000 * 60 * 60));
 
   return {
-      milliseconds: 0,
-      seconds: 0,
-      minutes: 0,
-      hours: 0
+      milliseconds: timeDiffFix,
+      seconds: diffInSeconds,
+      minutes: diffInMinutes,
+      hours: diffInHours
   };
-
 }
 
 function saveToLocalStorage() {
