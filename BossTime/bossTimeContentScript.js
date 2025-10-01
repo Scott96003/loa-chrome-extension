@@ -226,11 +226,8 @@ function sortListByRespawnTime() {
   // 動態排序條件陣列，按優先順序進行比較
   const sortingCriteria = [
     {
-      name: '與上次死亡的時間差',
-      compare: (a, b) => {
-        const getDeathPer = (obj) => (obj.bossDeathDiff?.seconds ?? 0) / (obj.respawnTime * 3600);
-        return getDeathPer(b) - getDeathPer(a);
-      }
+      name: '還有多少次重生',
+      compare: (a, b) => b.respawnCount - a.respawnCount
     },
     {
       name: '確認是否本輪有死過',
@@ -255,8 +252,11 @@ function sortListByRespawnTime() {
       }
     },
     {
-      name: '還有多少次重生',
-      compare: (a, b) => b.respawnCount - a.respawnCount
+      name: '與上次死亡的時間差',
+      compare: (a, b) => {
+        const getDeathPer = (obj) => (obj.bossDeathDiff?.seconds ?? 0) / (obj.respawnTime * 3600);
+        return getDeathPer(b) - getDeathPer(a);
+      }
     },
     {
       name: '比對死亡時間',
