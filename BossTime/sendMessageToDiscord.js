@@ -166,6 +166,7 @@ setInterval(() => {
     // 檢查是否重複執行，確保只執行一次
     if (!isTaskRunning) {
       isTaskRunning = true;
+      refresh();
       console.log('更新時間')
       SendToDC(0);
       // 等待幾秒後重設旗標，防止短時間內重複執行
