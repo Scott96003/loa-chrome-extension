@@ -236,11 +236,11 @@ function sortListByRespawnTime() {
     //   }
     // },
     {
-      name: '還有多少次重生',
+      name: '對比重生次數',
       compare: (a, b) => b.respawnCount - a.respawnCount
     },
     {
-      name: '計算預估出生時間%',
+      name: '對比預估出生時間%',
       compare: (a, b) => {
         const now = Date.now();
         const getPercentage = (obj) => {
@@ -252,8 +252,8 @@ function sortListByRespawnTime() {
       }
     },
     {
-      name: '比對死亡時間',
-      compare: (a, b) => a.death - b.death
+      name: '對比死亡時間',
+      compare: (a, b) => new Date(a.death) - new Date(b.death)
     }
     // {
     //   name: '與上次死亡的時間差',
@@ -264,19 +264,29 @@ function sortListByRespawnTime() {
     // },
 
   ];
+// sort()會依匿名函式的參數與回傳的值為精確的排序規則：
 
+// 當回傳值為負數時，那麼前面的數放在前面
+// 當回傳值為正整數，那麼後面的數在前面
+// 當回傳值為零，保持不動。
   // 按動態條件進行排序
+  console.log("按動態條件進行排序")
   bossListData.sort((a, b) => {
     for (let criterion of sortingCriteria) {
       const diff = criterion.compare(a, b);
       console.log(criterion.name, a.bossName, b.bossName, diff);
-      if (diff !== 0) {
+      // 這邊必須要判斷不等於0才會跑下一個條件
+      if (diff != 0) {
         return diff;
       }
     }
-    return 0; // 所有條件相同時維持原順序
+    return 0;
   });
+    for (let criterion of sortingCriteria) {
 
+      console.log(criterion.name);
+
+    }
   console.log("排序後的資料:");
   console.log(bossListData);
 
