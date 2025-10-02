@@ -61,6 +61,9 @@ function addToBossList() {
   }
   if (insertBoss(data)) {
     bossListData.push(data);
+    // 在新增資料時才計算一次
+    data.result = findLostBoss(data);
+    data.respawnCount = data.result.rebornCount;
     sortListByRespawnTime();
     saveToLocalStorage();
   } else {
@@ -86,6 +89,7 @@ function insertBoss(data) {
   return check;
 }
 
+// 將數據第一次畫出
 function addBossTR(data) {
   bossName = data.bossName;
   respawnTime = parseInt(data.respawnTime);
@@ -220,9 +224,9 @@ function createDateTimePickerForDeathTime() {
 }
 
 function sortListByRespawnTime() {
-  var bossTable = document.getElementById("bossList").getElementsByTagName('tbody')[0];
-  bossTable.innerHTML = '';
-
+  // var bossTable = document.getElementById("bossList").getElementsByTagName('tbody')[0];
+  // bossTable.innerHTML = '';
+  // 1. 只對資料陣列進行排序，不要碰 DOM
   // 動態排序條件陣列，按優先順序進行比較
   const sortingCriteria = [
     // {
@@ -287,16 +291,19 @@ function sortListByRespawnTime() {
     }
     return 0;
   });
-    for (let criterion of sortingCriteria) {
 
-      console.log(criterion.name);
+  // 2. 更新表格的順序
+  const bossTableBody = document.getElementById("bossList").getElementsByTagName("tbody")[0];
+  const newOrder = bossListData.map(boss => document.getElementById("boss_" + boss.id));
 
-    }
-  console.log("排序後的資料:");
-  console.log(bossListData);
-
-  bossListData.forEach(function(item) {
-    addBossTR(item);
+  // 移除現有所有行，並按新順序重新加入
+  while (bossTableBody.firstChild) {
+      bossTableBody.removeChild(bossTableBody.firstChild);
+  }
+  newOrder.forEach(row => {
+      if (row) { // 確保元素存在
+          bossTableBody.appendChild(row);
+      }
   });
 
   setTimeout(() => {
@@ -355,120 +362,93 @@ function getSpawnRange(currectTime, cycleHours) {
 }
  
 function updateBossRemainingTime() {
-    var now = new Date();
-    bossListData.forEach(function(bossData) {
-        // 取得row
-        var row =document.getElementById("boss_"+bossData.id)
+  var now = new Date();
+  bossListData.forEach(function(bossData) {
+      // 取得row
+      var row =document.getElementById("boss_"+bossData.id)
 
-        var respawnTimeHours = parseInt(bossData.respawnTime);
-        let part1Time = respawnTimeHours * 0.75 * 3600000;
-        // 1/2
-        var halfTime = respawnTimeHours * 0.5 * 3600000;
-        // 2/3
-        var quarterTime = respawnTimeHours * 0.25 * 3600000;
-        var approachingTime = respawnTimeHours * 0.1 * 3600000;
-        
-        var deathTime = new Date(bossData.death);
+      var respawnTimeHours = parseInt(bossData.respawnTime);
+      let part1Time = respawnTimeHours * 0.75 * 3600000;
+      // 1/2
+      var halfTime = respawnTimeHours * 0.5 * 3600000;
+      // 2/3
+      var quarterTime = respawnTimeHours * 0.25 * 3600000;
+      var approachingTime = respawnTimeHours * 0.1 * 3600000;
+      
+      var deathTime = new Date(bossData.death);
 
-        var respawnDate = getRebirthTime(respawnTimeHours); // 计算预估出生时间
-        bossData.DefaultRespawnTime = respawnDate
-        var respawnDate2 = new Date(deathTime.getTime() + respawnTimeHours * 3600000 * 2); // 计算预估2出生时间
-
-
-        var lastRespawnTime = respawnDate - (respawnTimeHours * 60 * 60 * 1000);
-        var lastRespawnTime2 = respawnDate - (respawnTimeHours * 2 * 60 * 60 * 1000);
-        // 預估出生時間
-        var percentage = ((Math.abs(now - respawnDate) / (respawnTimeHours * 3600000)) * 100);
-
-        bossData.重生間隔 = formatDateTime_Easy(new Date(lastRespawnTime),new Date(respawnDate));
-        row.cells[5].innerText = bossData.重生間隔 + "(" +(100-percentage).toFixed(2)+"%)";
+      var respawnDate = getRebirthTime(respawnTimeHours); // 计算预估出生时间
+      bossData.DefaultRespawnTime = respawnDate
+      var respawnDate2 = new Date(deathTime.getTime() + respawnTimeHours * 3600000 * 2); // 计算预估2出生时间
 
 
-        // 預計重生次數
-        // 找出是否有遺漏重生的boss
-        result = findLostBoss(bossData);
-        bossData.result = result;
+      var lastRespawnTime = respawnDate - (respawnTimeHours * 60 * 60 * 1000);
+      var lastRespawnTime2 = respawnDate - (respawnTimeHours * 2 * 60 * 60 * 1000);
+      // 預估出生時間
+      var percentage = ((Math.abs(now - respawnDate) / (respawnTimeHours * 3600000)) * 100);
 
-        // 可能重生次數
-        bossData.respawnCount = result.rebornCount
-        row.cells[6].innerText = bossData.respawnCount;
-        row.classList.remove()
-        if (bossData.respawnCount > 0) {
-          // 還沒到重生時間
-          if (now >= (bossData.DefaultRespawnTime - approachingTime)) {
-              if (!row.classList.contains('approaching')) {
-                  row.classList.add('approaching');
-              }
-          } else if (now >= (bossData.DefaultRespawnTime - quarterTime)) {
-            if (!row.classList.contains('quarter-time')) {
-                // speak(bossData.bossName + "重生已過3/4");
-                row.classList.add('quarter-time'); // 淡藍色
+      bossData.重生間隔 = formatDateTime_Easy(new Date(lastRespawnTime),new Date(respawnDate));
+      row.cells[5].innerText = bossData.重生間隔 + "(" +(100-percentage).toFixed(2)+"%)";
+
+      // 可能重生次數
+      bossData.respawnCount = bossData.result.rebornCount
+      row.cells[6].innerText = bossData.respawnCount;
+      // 移除所有的class
+      row.className = ''
+      if (bossData.respawnCount > 0) {
+        // 還沒到重生時間
+        if (now >= (bossData.DefaultRespawnTime - approachingTime)) {
+            if (!row.classList.contains('approaching')) {
+                row.classList.add('approaching');
             }
-          } else if (now >= (bossData.DefaultRespawnTime - halfTime)) {
-            if (!row.classList.contains('half-time')) {
-              // speak(bossData.bossName + "重生已過2/4");
-              row.classList.add('half-time'); // 淡綠色
-            }
-          } else if (now >= (bossData.DefaultRespawnTime - part1Time)) {
-            if (!row.classList.contains('part1-time')) {
-              // speak(bossData.bossName + "重生已過1/4");
-              row.classList.add('part1-time'); // 淡藍
-            }
+        } else if (now >= (bossData.DefaultRespawnTime - quarterTime)) {
+          if (!row.classList.contains('quarter-time')) {
+              // speak(bossData.bossName + "重生已過3/4");
+              row.classList.add('quarter-time'); // 淡藍色
           }
-
-       
-          // 取得每一輪boss應該有的數量
-          var bossCount = getBossCount(bossData)
-
-
-          // 兩次重生沒出
-          if ((result.segments[1] != undefined) && ((result.segments[1]?.deathList?.length ?? 0)== 0)) {
-            if (!row.classList.contains('double-boss')) {
-              row.classList.add('double-boss'); // 深紅色
-            }
-            // 是否可能重生
-            row.cells[6].innerText = bossData.respawnCount + " - 上輪沒出";
-            
+        } else if (now >= (bossData.DefaultRespawnTime - halfTime)) {
+          if (!row.classList.contains('half-time')) {
+            // speak(bossData.bossName + "重生已過2/4");
+            row.classList.add('half-time'); // 淡綠色
           }
-
+        } else if (now >= (bossData.DefaultRespawnTime - part1Time)) {
+          if (!row.classList.contains('part1-time')) {
+            // speak(bossData.bossName + "重生已過1/4");
+            row.classList.add('part1-time'); // 淡藍
+          }
         }
+      }
 
+      // 文字置中
+      row.cells[6].style.textAlign = 'center';
+      row.cells[6].style.verticalAlign = 'middle';
 
+      // 死亡間格
+      let bossDeathDiff = getTimeDiff(bossData);
+      bossData.bossDeathDiff = bossDeathDiff
+      const getDeathPer = (obj) => (obj.bossDeathDiff?.seconds ?? 0) / (obj.respawnTime * 3600);
 
+      row.cells[7].innerText = formatTimeDifference(bossDeathDiff.milliseconds) + "(" + getDeathPer(bossData).toFixed(2) +")";
+      
 
+      // 計算如果死亡時間超過間隔, 開始閃爍
+      let totalSeconds = bossDeathDiff.seconds;
+      if (totalSeconds > 0) {
+          let respawnTimeInSeconds = bossData.respawnTime * 3600; // 將 respawnTime 轉換為秒
+          
 
-        // 文字水平置中
-        row.cells[6].style.textAlign = 'center';
-
-        // 文字垂直置中
-        row.cells[6].style.verticalAlign = 'middle';
-
-        // 死亡間格
-        let bossDeathDiff = getTimeDiff(bossData);
-        bossData.bossDeathDiff = bossDeathDiff
-        const getDeathPer = (obj) => (obj.bossDeathDiff?.seconds ?? 0) / (obj.respawnTime * 3600);
-
-        row.cells[7].innerText = formatTimeDifference(bossDeathDiff.milliseconds) + "(" + getDeathPer(bossData).toFixed(2) +")";
-        
-
-        // 計算總秒數
-        let totalSeconds = bossDeathDiff.seconds;
-        if (totalSeconds > 0) {
-            let respawnTimeInSeconds = bossData.respawnTime * 3600; // 將 respawnTime 轉換為秒
-            
-
-            if (totalSeconds > respawnTimeInSeconds) {
-                // 加入閃爍效果
-                row.cells[7].classList.add('blinking');
-            } else {
-                // 移除閃爍效果          
-                row.cells[7].classList.remove('blinking');
-            }
-        } else {
-            // 處理無效時間格式的情況，例如移除閃爍效果
-            row.cells[7].classList.remove('blinking');
-        }
-    });
+          if (totalSeconds > respawnTimeInSeconds) {
+              // 加入閃爍效果
+              row.cells[7].classList.add('blinking');
+          } else {
+              // 移除閃爍效果          
+              row.cells[7].classList.remove('blinking');
+          }
+      } else {
+          // 處理無效時間格式的情況，例如移除閃爍效果
+          row.cells[7].classList.remove('blinking');
+      }
+  });
 }
 
 // 找出缺失的時間區段
@@ -625,37 +605,57 @@ function loadFromLocalStorage() {
     });
   }
 
-  rebootTime = new Date(localStorage.getItem("rebootTime")) || new Date(baseTime)
+  // 如果沒有rebootTime 那就拿7天前的時間
+  let 取得7天前的時間 = new Date().setDate(new Date().getDate() - 7)
+  rebootTime = new Date(localStorage.getItem("rebootTime")) || 取得7天前的時間
+
+  if (取得7天前的時間 > rebootTime) {
+    rebootTime = 取得7天前的時間
+  }
+
+
 
   var maxDeathTime = bossListData[0].death
   // 找到最後一筆死亡資料
   bossListData.forEach(function(data) {
-    if (maxDeathTime < data.death) {
+    if (new Date(maxDeathTime) < new Date(data.death)) {
       maxDeathTime = data.death
     }
   })
 
+
+
+  // 重新畫出所有數據
+  console.log("重新使用BossListDat加載");
+  if (bossListData.length > 0) {
+      var bossTable = document.getElementById("bossList").getElementsByTagName("tbody")[0];
+      // 清空table
+      bossTable.innerHTML = "";
+      console.log(bossListData);
+      bossListData.forEach(function(boss) {
+        // 在新增資料時才計算一次
+        boss.result = findLostBoss(boss);
+        boss.respawnCount = boss.result.rebornCount;
+        // 將數據第一次畫出
+        addBossTR(boss);
+      })
+  }
+  sortListByRespawnTime();
+
+
+  // 判斷是否需要重新獲取數據
+  console.log("最後死亡時間:", maxDeathTime, new Date())
+
+  let 最後記錄日期與今天相差 = (new Date() - new Date(maxDeathTime))/3600/24/1000
   // 重新獲取資料
-  getOldData(new Date(maxDeathTime));
-
-  loadFromBossListData();
+  if (最後記錄日期與今天相差 > 7) {
+    // 複製一個新的 Date 物件，以免修改到原始的 now 變數
+    const sevenDaysAgo = new Date().setDate(new Date().getDate() - 7)
+    getOldData(sevenDaysAgo);
+  } else {
+    getOldData(new Date(maxDeathTime));
+  }
 }
-
-function loadFromBossListData() {
-    console.log("重新使用BossListDat加載");
-    if (bossListData.length > 0) {
-        var bossTable = document.getElementById("bossList").getElementsByTagName("tbody")[0];
-        // 清空table
-        bossTable.innerHTML = "";
-        console.log(bossListData);
-        bossListData.forEach(function(item) {
-          addBossTR(item);
-        })
-    }
-    sortListByRespawnTime();
-}
-
-
 
 
 // 重置所有資料
