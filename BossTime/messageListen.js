@@ -78,17 +78,19 @@ function updateBossData(bossData) {
       console.log(bossListData[index].bossName + "死亡時間:");
       console.log(bossListData[index].deathList);
       // 將日期字串轉換為日期物件並進行排序
-      bossListData[index].deathList = bossListData[index].deathList.sort(function(a, b) {
+      boss.deathList = boss.deathList.sort(function(a, b) {
         var a_deathTime = new Date(a.death).getTime();
         var b_deathTime = new Date(b.death).getTime();
         return b_deathTime - a_deathTime;
       });
       // 只取維修後的資料
-      bossListData[index].deathList = bossListData[index].deathList.filter(item => {
+      boss.deathList = boss.deathList.filter(item => {
         return new Date(item.death) > rebootTime
       })
-      // bossListData[index].deathList = bossListData[index].deathList.slice(0, 100); // 只取前x筆資料 
 
+      // 在這裡處理 response，更新 bossListData，然後再呼叫 findLostBoss
+      boss.result = findLostBoss(boss);
+      boss.respawnCount = boss.result.rebornCount;
 
       // 在這裡進行當前死亡時間跟準備新增的時間做大小比較
       if (item.death < newDeathEntry.death) {
