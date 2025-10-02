@@ -242,13 +242,18 @@ function sortListByRespawnTime() {
     {
       name: '對比預估出生時間%',
       compare: (a, b) => {
-        const now = Date.now();
-        const getPercentage = (obj) => {
-          const defaultRespawnTime = new Date(obj.DefaultRespawnTime).getTime();
-          const respawnTimeInMs = parseInt(obj.respawnTime) * 3600000;
-          return Math.abs(now - defaultRespawnTime) / respawnTimeInMs * 100;
-        };
-        return getPercentage(a) - getPercentage(b);
+        // 必須要重生次數不為0才判斷
+        if (a.respawnCount > 0 && b.respawnCount > 0) {
+          const now = Date.now();
+          const getPercentage = (obj) => {
+            const defaultRespawnTime = new Date(obj.DefaultRespawnTime).getTime();
+            const respawnTimeInMs = parseInt(obj.respawnTime) * 3600000;
+            return Math.abs(now - defaultRespawnTime) / respawnTimeInMs * 100;
+          };
+          return getPercentage(a) - getPercentage(b);
+        } else {
+          return 0;
+        }
       }
     },
     {
