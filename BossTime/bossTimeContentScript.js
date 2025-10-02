@@ -882,19 +882,9 @@ function showTooltip(event, data) {
   var windowWidth = window.innerWidth;
 
   // 如果懸浮框高度超過視窗高度，固定懸浮框的頂部靠近視窗頂部，確保顯示最上面的資料
-  if (tooltipHeight > windowHeight) {
-    topPos = window.scrollY; // 貼近視窗的頂部
-  } else {
-    // 調整 top 位置，如果超出視窗下邊界
-    if (topPos + tooltipHeight > windowHeight) {
-      topPos = windowHeight - tooltipHeight + window.scrollY; // 保證懸浮框完整顯示
-    }
-  }
-
-  // 調整 left 位置，如果超出視窗右邊界
-  if (leftPos + tooltipWidth > windowWidth) {
-    leftPos = event.clientX + window.scrollX - tooltipWidth - 10;
-  }
+  if (event.clientY > (windowHeight/2)) {
+    topPos -= windowHeight/4;// 貼近視窗的頂部
+  } 
 
   tooltip.style.top = topPos + "px";
   tooltip.style.left = leftPos + "px";
