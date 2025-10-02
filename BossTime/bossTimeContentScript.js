@@ -360,10 +360,17 @@ function getSpawnRange(currectTime, cycleHours) {
   var time1 = time2 - (cycleHours * 60 * 60 * 1000);
   return formatDateTime_Easy(new Date(time1), new Date(time2));
 }
- 
-function updateBossRemainingTime() {
+
+function updateBossRemainingTime(bossID = 0) {
+  console.trace()
   var now = new Date();
   bossListData.forEach(function(bossData) {
+
+    // 如果有指定bossID, 且判斷到id 不相符, 就換下一個
+    if (bossID != 0 && bossData.id != bossID) {
+      return;
+    }
+
       // 取得row
       var row =document.getElementById("boss_"+bossData.id)
 
@@ -388,6 +395,10 @@ function updateBossRemainingTime() {
       var percentage = ((Math.abs(now - respawnDate) / (respawnTimeHours * 3600000)) * 100);
 
       bossData.重生間隔 = formatDateTime_Easy(new Date(lastRespawnTime),new Date(respawnDate));
+
+      row.cells[3].innerText = bossData.death;
+      row.cells[4].innerText = bossData.emblem;
+
       row.cells[5].innerText = bossData.重生間隔 + "(" +(100-percentage).toFixed(2)+"%)";
 
       // 可能重生次數
@@ -519,10 +530,25 @@ function formatDateTime_Easy(date, date2) {
 }
 
 function formatTimeDifference(timeDiff) {
-    var hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    var minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-    var seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-    return hours.toString().padStart(2, '0') + ":" + minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0');
+  // 計算總天數
+  var days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+  // 計算剩餘的時、分、秒
+  var hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  var minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+  // var seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+  // 格式化輸出
+  var formattedTime = "";
+
+  if (days > 0) {
+      formattedTime += days + " 天 ";
+  }
+  
+  formattedTime += hours.toString().padStart(2, '0') + ":" + 
+                   minutes.toString().padStart(2, '0');
+                   // minutes.toString().padStart(2, '0') + ":" + 
+                   // seconds.toString().padStart(2, '0');
+  
+  return formattedTime;
 }
 
 function getTimeGap(bossData) {
@@ -640,7 +666,9 @@ function loadFromLocalStorage() {
         addBossTR(boss);
       })
   }
-  sortListByRespawnTime();
+
+  // 刷新數據
+  refresh();
 
 
   // 判斷是否需要重新獲取數據

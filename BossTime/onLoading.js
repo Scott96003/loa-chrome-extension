@@ -107,5 +107,5 @@ document.addEventListener("DOMContentLoaded", function() {
 window.onload = function() {
   console.log("window onload");
     loadFromLocalStorage();
-    setInterval(updateBossRemainingTime, 2*1000); // 每秒更新剩余时间
+    setInterval(updateBossRemainingTime, 60*1000); // 每秒更新剩余时间
 };
