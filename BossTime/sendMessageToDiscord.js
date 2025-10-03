@@ -1,3 +1,68 @@
+// 【步驟一： getDisplayWidth 函數 (如上方所示，這裡省略以節省空間)】
+function getDisplayWidth(str) {
+  // ... (使用上方提供的 getDisplayWidth 函數，確保其正確性)
+  if (!str) return 0;
+  const text = String(str);
+  const fullWidthRegex = /[\u4e00-\u9fff\u3000-\u303f\uff00-\uff5a]/; 
+  let width = 0;
+  for (const char of text) {
+    if (fullWidthRegex.test(char)) {
+      width += 2; 
+    } else {
+      width += 1;
+    }
+  }
+  return width;
+}
+
+/**
+ * 根據最大寬度，為長字串插入換行符 (\n)
+ * @param {string} text - 要處理的文字
+ * @param {number} maxWidth - 該欄位的最大顯示寬度
+ * @returns {string[]} 包含分行後所有子字串的陣列
+ */
+function wrapText(text, maxWidth) {
+    const textStr = String(text);
+    if (getDisplayWidth(textStr) <= maxWidth) {
+        return [textStr];
+    }
+    
+    const lines = [];
+    let currentLine = '';
+    let currentWidth = 0;
+    
+    // 遍歷字串中的每一個字元
+    for (const char of textStr) {
+        const charWidth = getDisplayWidth(char);
+        
+        // 檢查加入新字元後是否超過最大寬度
+        if (currentWidth + charWidth > maxWidth) {
+            // 1. 將已經累積的行推入結果
+            lines.push(currentLine);
+            
+            // 2. 重設行和寬度，並將**當前這個字元**作為新行的開頭
+            currentLine = char;
+            currentWidth = charWidth;
+        } else {
+            // 否則繼續將字元加入目前行
+            currentLine += char;
+            currentWidth += charWidth;
+        }
+    }
+    
+    // 將最後一行推入結果
+    if (currentLine) {
+        lines.push(currentLine);
+    }
+    
+    return lines;
+}
+
+
+// 【步驟三：修正 formatTableForDiscord 主函數】
+
+const MAX_NAME_WIDTH = 12; // <-- 設定名稱欄位的最大寬度 (例如 7個中文字)
+
 function formatTableForDiscord(data) {
   if (!data || data.length === 0) {
     return '沒有資料可顯示。';
@@ -5,61 +70,118 @@ function formatTableForDiscord(data) {
 
   // 設定每一欄的標題、對應的資料鍵值，以及對齊方式
   const columns = [
-    { key: 'count', header: '數量', align: 'right' },
-    { key: 'spawnTime', header: '區段', align: 'center' },
-    { key: 'name', header: '名稱', align: 'left' },
-    { key: 'guild', header: '血盟', align: 'left' }
+    { key: 'count', header: ' ', align: 'left' }, // 數量靠右，並確保標題是空格
+    { key: 'spawnTime', header: '區段', align: 'left' },
+    { key: 'name', header: '名稱', align: 'left', maxWidth: MAX_NAME_WIDTH}, // <-- 加入最大寬度限制
+    { key: 'guild', header: '血盟', align: 'left', maxWidth: MAX_NAME_WIDTH},
+    { key: 'bossDeathDiff', header: '已死亡', align: 'left' }
   ];
 
-  // 1. 預處理資料，將重生區段的 '~' 替換為 '-'
+  // 1. 預處理資料 (略)
   const processedData = data.map(item => ({
     ...item,
     spawnTime: String(item.spawnTime).replace(/~/g, '-'),
+    count: String(item.count),
+    name: String(item.name),
+    guild: String(item.guild),
+    bossDeathDiff: String(item.bossDeathDiff).trim()
   }));
 
-  // 2. 計算每一欄的最大寬度 (完全依據內容動態調整)
-  const columnWidths = columns.map(col => col.header.length);
+  // 2. 計算每一欄的最大**顯示寬度** (Display Width)
+  const columnWidths = columns.map(col => getDisplayWidth(String(col.header)));
+
   processedData.forEach(item => {
     columns.forEach((col, i) => {
-      columnWidths[i] = Math.max(columnWidths[i], String(item[col.key]).length);
+      const content = String(item[col.key]);
+      let widthToCompare = getDisplayWidth(content);
+
+      columnWidths[i] = Math.max(
+        columnWidths[i],
+        widthToCompare
+      );
+      // 如果該欄位有 maxWidth 限制，則用 maxWidth 來計算表格總寬度
+      if (col.maxWidth) {
+          columnWidths[i] = columnWidths[i] > col.maxWidth ? col.maxWidth : columnWidths[i]
+      }
     });
   });
 
-  // 3. 依據設定的對齊方式來填充文字
-  const padText = (text, width, align) => {
+
+  // 3. 修正後的 padText 函數 (根據顯示寬度填充)
+  const padText = (text, targetWidth, align) => {
     const textStr = String(text);
-    if (align === 'right') {
-      return textStr.padStart(width);
+    const currentWidth = getDisplayWidth(textStr); 
+    const paddingNeeded = targetWidth - currentWidth;
+    
+    if (paddingNeeded <= 0) {
+        return textStr;
     }
-    // 預設為靠左對齊 (left)
-    return textStr.padEnd(width);
+
+    const padding = ' '.repeat(paddingNeeded);
+
+    if (align === 'right') {
+      return padding + textStr;
+    }
+    return textStr + padding;
   };
 
   // 4. 格式化表頭
   const formattedHeaders = columns
-    .map((col, i) => padText(col.header, columnWidths[i], col.align))
+    .map((col, i) => padText(col.header, columnWidths[i] > MAX_NAME_WIDTH ? 12 : columnWidths[i], col.align))
     .join(' ');
 
   // 5. 格式化分隔線
   const separator = columnWidths
-    .map(width => '═'.repeat(width))
+    .map(width => '='.repeat(width > 8 ? 8 : width))
     .join(' ');
 
-  // 6. 格式化每一筆資料
-  const formattedData = processedData
-    .map(item => {
-      return columns
-        .map((col, i) => padText(item[col.key], columnWidths[i], col.align))
-        .join(' ');
-    })
-    .join('\n');
 
-  // 7. 組合最終的字串，並加上程式區段的標記
+  // 6. 格式化每一筆資料 (重大變動：處理多行)
+  const rowLines = [];
+  processedData.forEach(item => {
+      
+      // 取得所有欄位分行後的結果 (Lines)
+      const columnLines = columns.map(col => {
+          const content = String(item[col.key]);
+          if (col.maxWidth) {
+              return wrapText(content, col.maxWidth); // 長欄位進行分行
+          } else {
+              return [content]; // 短欄位維持單行
+          }
+      });
+      
+      // 找出該筆資料中，行數最多的是哪一欄
+      const maxLines = columnLines.reduce((max, lines) => Math.max(max, lines.length), 1);
+      
+      // 遍歷每一行 (i = 0 是第一行，i = 1 是第二行...)
+      for (let i = 0; i < maxLines; i++) {
+          const lineParts = columnLines.map((lines, j) => {
+              const col = columns[j];
+              
+              // 1. 判斷是否是該欄位的後續行
+              if (i > 0 && !col.maxWidth) {
+                  // 非分行欄位的後續行，內容固定為空字串，讓 padText 填充整個寬度
+                  const paddedText = padText('', columnWidths[j], col.align);
+                  return paddedText;
+              }
+              
+              // 2. 獲取內容，如果超出則為空字串
+              const cellContent = lines[i] || ''; 
+              const paddedText = padText(cellContent, columnWidths[j], col.align);
+              
+              return paddedText;
+          });
+          rowLines.push(lineParts.join(' '));
+      }
+  });
+
+
+  // 7. 組合最終的字串
   const tableString = `
 \`\`\`
 ${formattedHeaders}
 ${separator}
-${formattedData}
+${rowLines.join('\n')}
 \`\`\`
   `.trim();
 
@@ -169,7 +291,12 @@ function makeListMsg(listID) {
     bossTimeRanges[0] = Math.max(bossTimeRanges[0], parseInt(itemHours[0]));
     bossTimeRanges[1] = Math.min(bossTimeRanges[1], parseInt(itemHours[1]));
 
-    tableData.push({ count: item.respawnCount, name: item.bossName, spawnTime: item.重生間隔, guild: item.emblem == 'Il一雲門集團一II' ? '雲門' : item.emblem, death: item.death})
+    tableData.push({ count: item.respawnCount, 
+      name: item.bossName, 
+      spawnTime: item.重生間隔, 
+      guild: item.emblem == 'Il一雲門集團一II' ? '雲門' : item.emblem, 
+      death: item.death,
+      bossDeathDiff: formatTimeDifference(item.bossDeathDiff.milliseconds)})
   })
   return formatTableForDiscord(tableData)
 }
