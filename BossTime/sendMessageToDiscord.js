@@ -99,7 +99,7 @@ function SendToDC(id, test=false) {
   const isActive = id > 100000 ? true : false
   var bossList1 = [45955,45956,45957,45958,45959,45960,45961,45962,45863]
   var bossList2 = [81082,45685,45674,45625,45753]
-  var 奧塔Boss = [45672,45673,45618,45653]
+  var 奧塔Boss = [45672,45673,45618,45653,45606]
   var 野外boss = [45614,45801,46142,46141,99085,99086,99065]
   // 合併多個陣列
   const bossList = [...bossList1, ...bossList2, ...奧塔Boss, ...野外boss];
