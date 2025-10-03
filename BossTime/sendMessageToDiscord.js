@@ -74,7 +74,7 @@ function formatTableForDiscord(data) {
     { key: 'spawnTime', header: '區段', align: 'left' },
     { key: 'name', header: '名稱', align: 'left', maxWidth: MAX_NAME_WIDTH}, // <-- 加入最大寬度限制
     { key: 'guild', header: '血盟', align: 'left', maxWidth: MAX_NAME_WIDTH},
-    { key: 'bossDeathDiff', header: '已死亡', align: 'left' }
+    { key: '已死亡', header: '已死亡', align: 'left' }
   ];
 
   // 1. 預處理資料 (略)
@@ -84,7 +84,7 @@ function formatTableForDiscord(data) {
     count: String(item.count),
     name: String(item.name),
     guild: String(item.guild),
-    bossDeathDiff: String(item.bossDeathDiff).trim()
+    已死亡: String(item.已死亡)
   }));
 
   // 2. 計算每一欄的最大**顯示寬度** (Display Width)
@@ -296,7 +296,7 @@ function makeListMsg(listID) {
       spawnTime: item.重生間隔, 
       guild: item.emblem == 'Il一雲門集團一II' ? '雲門' : item.emblem, 
       death: item.death,
-      bossDeathDiff: formatTimeDifference(item.bossDeathDiff.milliseconds)})
+      已死亡: formatTimeDifference(item.已死亡)})
   })
   return formatTableForDiscord(tableData)
 }

@@ -271,7 +271,7 @@ function sortListByRespawnTime() {
     // {
     //   name: '與上次死亡的時間差',
     //   compare: (a, b) => {
-    //     const getDeathPer = (obj) => (obj.bossDeathDiff?.seconds ?? 0) / (obj.respawnTime * 3600);
+    //     const getDeathPer = (obj) => (obj.已死亡 ?? 0) / (obj.respawnTime * 3600);
     //     return getDeathPer(b) - getDeathPer(a);
     //   }
     // },
@@ -287,7 +287,7 @@ function sortListByRespawnTime() {
   bossListData.sort((a, b) => {
     for (let criterion of sortingCriteria) {
       const diff = criterion.compare(a, b);
-      console.log(criterion.name, a.bossName, b.bossName, diff);
+      // console.log(criterion.name, a.bossName, b.bossName, diff);
       // 這邊必須要判斷不等於0才會跑下一個條件
       if (diff != 0) {
         return diff;
@@ -366,8 +366,10 @@ function getSpawnRange(currectTime, cycleHours) {
 }
 
 function updateBossRemainingTime(bossID = 0) {
+  // 判斷是否需要重新排列
   var needSortList = false
   var now = new Date();
+
   bossListData.forEach(function(bossData) {
 
     // 如果有指定bossID, 且判斷到id 不相符, 就換下一個
@@ -453,21 +455,19 @@ function updateBossRemainingTime(bossID = 0) {
       row.cells[6].style.textAlign = 'center';
       row.cells[6].style.verticalAlign = 'middle';
 
-      // 死亡間格
-      let bossDeathDiff = getTimeDiff(bossData);
-      bossData.bossDeathDiff = bossDeathDiff
-      const getDeathPer = (obj) => (obj.bossDeathDiff?.seconds ?? 0) / (obj.respawnTime * 3600);
+      // 計算死亡間格
+      getTimeDiff(bossData);
+      // 用來速算 % 用的 
+      const getDeathPer = (obj) => (obj.已死亡 ?? 0) / (obj.respawnTime * 3600 * 1000);
 
-      row.cells[7].innerText = formatTimeDifference(bossDeathDiff.milliseconds) + "(" + getDeathPer(bossData).toFixed(2) +")";
+      row.cells[7].innerText = formatTimeDifference(bossData.已死亡) + "(" + getDeathPer(bossData).toFixed(2) +")";
       
 
       // 計算如果死亡時間超過間隔, 開始閃爍
-      let totalSeconds = bossDeathDiff.seconds;
-      if (totalSeconds > 0) {
-          let respawnTimeInSeconds = bossData.respawnTime * 3600; // 將 respawnTime 轉換為秒
+      if (bossData.已死亡 > 0) {
+          let respawnTimeInSeconds = bossData.respawnTime * 3600 * 1000; // 將 respawnTime 轉換為秒
           
-
-          if (totalSeconds > respawnTimeInSeconds) {
+          if (bossData.已死亡 > respawnTimeInSeconds) {
               // 加入閃爍效果
               row.cells[7].classList.add('blinking');
           } else {
@@ -480,6 +480,7 @@ function updateBossRemainingTime(bossID = 0) {
       }
   });
 
+  // 如果數量有變動, 就要重新排列
   if (needSortList == true) {
     sortListByRespawnTime();
   }
@@ -596,25 +597,19 @@ function getTimeDiff(bossData) {
   }
   bossData.deathList = bossData.deathList.filter(item => item.emblem !== undefined);
 
-  var timeB = rebootTime;
-  if (bossData.deathList.length > 1) {
-    timeB = bossData.deathList[0].death
-  }
 
-  const timeDifference = new Date() - new Date(timeB);
-  var timeDiffFix = Math.abs(timeDifference);  // 時間差以毫秒為單位
+  let timeB = bossData.deathList[0].death || rebootTime
+  console.log(timeB)
+  // 現在時間跟最後一次死亡時間相差
+  let timeDifference = new Date() - new Date(timeB);
+  let timeDiffFix = Math.abs(timeDifference);  // 時間差以毫秒為單位
 
   // 將毫秒轉換為小時、分鐘、秒，或按你需求格式化
   const diffInSeconds = Math.floor(timeDiffFix / 1000);
   const diffInMinutes = Math.floor(timeDiffFix / (1000 * 60));
   const diffInHours = Math.floor(timeDiffFix / (1000 * 60 * 60));
-
-  return {
-      milliseconds: timeDiffFix,
-      seconds: diffInSeconds,
-      minutes: diffInMinutes,
-      hours: diffInHours
-  };
+  // 採用毫秒計算
+  bossData.已死亡 = timeDiffFix
 }
 
 function saveToLocalStorage() {
