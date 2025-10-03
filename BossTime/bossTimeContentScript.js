@@ -394,7 +394,21 @@ function updateBossRemainingTime(bossID = 0) {
       // 預估出生時間
       var percentage = ((Math.abs(now - respawnDate) / (respawnTimeHours * 3600000)) * 100);
 
-      bossData.重生間隔 = formatDateTime_Easy(new Date(lastRespawnTime),new Date(respawnDate));
+      // 1. 儲存舊的格式化字串
+      let oldFormattedInterval = bossData.重生間隔;
+
+      // 2. 計算並取得新的格式化字串
+      let newFormattedInterval = formatDateTime_Easy(new Date(lastRespawnTime), new Date(respawnDate));
+
+      // 3. 賦值 (更新 bossData)
+      bossData.重生間隔 = newFormattedInterval; 
+
+      // 4. 比較「舊的字串」與「新的字串」
+      if (oldFormattedInterval !== newFormattedInterval) {
+        // 只有當「格式化字串」確實改變時，才執行後續邏輯
+        bossData.result = findLostBoss(bossData);
+        bossData.respawnCount = bossData.result.rebornCount;
+      }
 
       row.cells[3].innerText = bossData.death;
       row.cells[4].innerText = bossData.emblem;
