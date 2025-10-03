@@ -93,55 +93,89 @@ async function sendTextWebhook(webhookUrl, textContent) {
     }
 }
 
+
+
+
 function SendToDC(id, test=false) {
 
   const fixId = id % 100000;
   const isActive = id > 100000 ? true : false
-  var bossList1 = [45955,45956,45957,45958,45959,45960,45961,45962,45863]
-  var bossList2 = [81082,45685,45674,45625,45753]
-  var 奧塔Boss = [45672,45673,45618,45653,45606]
-  var 野外boss = [45614,45801,46142,46141,99085,99086,99065]
+  const 長老Boss = [45955,45956,45957,45958,45959,45960,45961,45962,45863]
+  const 陣營Boss = [81082,45685,45674,45625,45753]
+  const 奧塔Boss = [45513,45547,45606,45650,45652,45653,45654,45618,45672,45673]
+  const 野外Boss = [45614,45801,46142,46141,99085,99086,99065]
   // 合併多個陣列
-  const bossList = [...bossList1, ...bossList2, ...奧塔Boss, ...野外boss];
+  const bossList = [...長老Boss, ...陣營Boss, ...奧塔Boss, ...野外Boss];
+  var titleMsg = ""
   var msg = ""
   var data = []
 
   if (bossList.includes(fixId) || (fixId == 0)) {
 
     if (fixId == 0) {
-      msg += '*** 重生輪迴時間刷新 ***\n'
+      titleMsg += '*** 重生輪迴時間刷新 ***\n'
     } else {
       findDeathBoss = bossListData.filter(function(item) {
           return (parseInt(item.id) == fixId);
       });
-      msg += "***[" + (isActive == true ? '活動 ' : '') + findDeathBoss[0].bossName + '] 被 ' + findDeathBoss[0].emblem + ' 擊殺 ' + findDeathBoss[0].death + '***\n'
+      titleMsg += "***[" + (isActive == true ? '活動 ' : '') + findDeathBoss[0].bossName + '] 被 ' + findDeathBoss[0].emblem + ' 擊殺 ' + findDeathBoss[0].death + '***\n'
     }
 
-    tableData = []
-    // msg += '>>> 剩餘數量    名稱    重生區段\n'
-    obj = bossListData.filter(function(item) {
-        return (bossList.includes(parseInt(item.id)) == true);
-    });
-    bossTimeRanges = [0,23]
-    obj.forEach(function(item) {
-      // 如果想更新為兩者中較大的值
-      const itemHours = item.重生間隔.split('~')
-      console.log(itemHours)
-      bossTimeRanges[0] = Math.max(bossTimeRanges[0], parseInt(itemHours[0]));
-      bossTimeRanges[1] = Math.min(bossTimeRanges[1], parseInt(itemHours[1]));
+    if (長老Boss.includes(fixId) || (fixId == 0)) {
+      let topMsg = "=== 長老Boss ===\n"
+      msg = titleMsg + topMsg + makeListMsg(長老Boss)
+      sendMsg(test,msg)
+    }
+    if (陣營Boss.includes(fixId) || (fixId == 0)) {
+      let topMsg = "=== 陣營Boss ===\n"
+      msg = titleMsg + topMsg + makeListMsg(陣營Boss)
+      sendMsg(test,msg)
+    }
+    if (奧塔Boss.includes(fixId) || (fixId == 0)) {
+      let topMsg = "=== 奧塔Boss ===\n"
+      msg = titleMsg + topMsg + makeListMsg(奧塔Boss)
+      sendMsg(test,msg)
+    }
+    if (野外Boss.includes(fixId) || (fixId == 0)) {
+      let topMsg = "=== 野外Boss ===\n"
+      msg = titleMsg + topMsg + makeListMsg(野外Boss)
+      sendMsg(test,msg)
+    }
 
-      tableData.push({ count: item.respawnCount, name: item.bossName, spawnTime: item.重生間隔, guild: item.emblem == 'Il一雲門集團一II' ? '雲門' : item.emblem, death: item.death})
-    })
-    msg += formatTableForDiscord(tableData)
-    if (test == false) {
-      WEBHOOK_URL.forEach(url => {
-        sendTextWebhook(url, msg);
-      })
-    } else {
-      console.log(msg)
+    // 發送訊息
+    function sendMsg(test,msg) {
+      if (test == false) {
+        WEBHOOK_URL.forEach(url => {
+          sendTextWebhook(url, msg);
+        })
+      } else {
+        console.log(msg)
+      }
     }
   }
 }
+
+function makeListMsg(listID) {
+  var tableData = []
+
+  var obj = bossListData.filter(function(item) {
+      return (listID.includes(parseInt(item.id)) == true);
+  });
+  bossTimeRanges = [0,23]
+  obj.forEach(function(item) {
+    // 如果想更新為兩者中較大的值
+    const itemHours = item.重生間隔.split('~')
+    console.log(itemHours)
+    bossTimeRanges[0] = Math.max(bossTimeRanges[0], parseInt(itemHours[0]));
+    bossTimeRanges[1] = Math.min(bossTimeRanges[1], parseInt(itemHours[1]));
+
+    tableData.push({ count: item.respawnCount, name: item.bossName, spawnTime: item.重生間隔, guild: item.emblem == 'Il一雲門集團一II' ? '雲門' : item.emblem, death: item.death})
+  })
+  return formatTableForDiscord(tableData)
+}
+
+
+
 
 /**
  * 判斷給定的時間（小時）是否在 20:00 到 03:00 的區間內。
