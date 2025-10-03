@@ -174,8 +174,12 @@ function confirmDateTime() {
     var now = new Date(selectedDateTime); // 获取当前时间
     // 設定重開機時間
     rebootTime = now;
-    //重新整理
-    refresh(); 
+
+    saveToLocalStorage();
+    // 重新讀取數據
+    loadFromLocalStorage();
+    // 更新dc
+    SendToDC(0);
   }
 }
 
