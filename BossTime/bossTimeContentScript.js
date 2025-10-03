@@ -362,7 +362,7 @@ function getSpawnRange(currectTime, cycleHours) {
 }
 
 function updateBossRemainingTime(bossID = 0) {
-  console.trace()
+  var needSortList = false
   var now = new Date();
   bossListData.forEach(function(bossData) {
 
@@ -405,6 +405,7 @@ function updateBossRemainingTime(bossID = 0) {
 
       // 4. 比較「舊的字串」與「新的字串」
       if (oldFormattedInterval !== newFormattedInterval) {
+        needSortList = true;
         // 只有當「格式化字串」確實改變時，才執行後續邏輯
         bossData.result = findLostBoss(bossData);
         bossData.respawnCount = bossData.result.rebornCount;
@@ -474,6 +475,10 @@ function updateBossRemainingTime(bossID = 0) {
           row.cells[7].classList.remove('blinking');
       }
   });
+
+  if (needSortList == true) {
+    sortListByRespawnTime();
+  }
 }
 
 // 找出缺失的時間區段
