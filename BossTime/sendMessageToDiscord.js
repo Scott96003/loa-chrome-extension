@@ -70,7 +70,7 @@ function formatTableForDiscord(data) {
 
   // 設定每一欄的標題、對應的資料鍵值，以及對齊方式
   const columns = [
-    { key: 'count', header: ' ', align: 'left' }, // 數量靠右，並確保標題是空格
+    { key: 'count', header: '數量', align: 'left' }, // 數量靠右，並確保標題是空格
     { key: 'spawnTime', header: '區段', align: 'left' },
     { key: 'name', header: '名稱', align: 'left', maxWidth: MAX_NAME_WIDTH}, // <-- 加入最大寬度限制
     { key: 'guild', header: '血盟', align: 'left', maxWidth: MAX_NAME_WIDTH},
