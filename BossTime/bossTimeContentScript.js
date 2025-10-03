@@ -598,7 +598,7 @@ function getTimeDiff(bossData) {
   bossData.deathList = bossData.deathList.filter(item => item.emblem !== undefined);
 
 
-  let timeB = bossData.deathList[0].death || rebootTime
+  let timeB = bossData.deathList[0]?.death || rebootTime
   console.log(timeB)
   // 現在時間跟最後一次死亡時間相差
   let timeDifference = new Date() - new Date(timeB);
