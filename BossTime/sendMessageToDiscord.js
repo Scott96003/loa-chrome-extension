@@ -84,7 +84,7 @@ function formatTableForDiscord(data) {
     count: String(item.count),
     name: String(item.name),
     guild: String(item.guild),
-    已死亡: String(item.已死亡)
+    已死亡: "<t:" + new Date(item.death).getTime() / 1000 +":R>"
   }));
 
   // 2. 計算每一欄的最大**顯示寬度** (Display Width)
@@ -161,7 +161,7 @@ function formatTableForDiscord(data) {
               // 1. 判斷是否是該欄位的後續行
               if (i > 0 && !col.maxWidth) {
                   // 非分行欄位的後續行，內容固定為空字串，讓 padText 填充整個寬度
-                  const paddedText = padText('', columnWidths[j], col.align);
+                  const paddedText = padText('', columnWidths[j] + 4, col.align);
                   return paddedText;
               }
               
@@ -171,18 +171,18 @@ function formatTableForDiscord(data) {
               
               return paddedText;
           });
-          rowLines.push(lineParts.join(' '));
+          rowLines.push("> " + lineParts.join(' '));
       }
   });
 
 
   // 7. 組合最終的字串
   const tableString = `
-\`\`\`
-${formattedHeaders}
-${separator}
+
+> ${formattedHeaders}
+> ${separator}
 ${rowLines.join('\n')}
-\`\`\`
+
   `.trim();
 
   return tableString;
@@ -235,7 +235,7 @@ function SendToDC(id, test=false) {
   if (bossList.includes(fixId) || (fixId == 0)) {
 
     if (fixId == 0) {
-      titleMsg += '*** 重生輪迴時間刷新 ***\n'
+      titleMsg += "*** 重生輪迴時間刷新 ***\n"
     } else {
       findDeathBoss = bossListData.filter(function(item) {
           return (parseInt(item.id) == fixId);
