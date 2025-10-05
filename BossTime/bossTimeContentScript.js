@@ -425,43 +425,48 @@ function updateBossRemainingTime(bossID = 0) {
       // 可能重生次數
       bossData.respawnCount = bossData.result.rebornCount
       row.cells[6].innerText = bossData.respawnCount;
-      // 移除所有的class
-      row.className = ''
-      if (bossData.respawnCount > 0) {
-        // 還沒到重生時間
-        if (now >= (bossData.DefaultRespawnTime - approachingTime)) {
-            if (!row.classList.contains('approaching')) {
-                row.classList.add('approaching');
-            }
-        } else if (now >= (bossData.DefaultRespawnTime - quarterTime)) {
-          if (!row.classList.contains('quarter-time')) {
-              // speak(bossData.bossName + "重生已過3/4");
-              row.classList.add('quarter-time'); // 淡藍色
-          }
-        } else if (now >= (bossData.DefaultRespawnTime - halfTime)) {
-          if (!row.classList.contains('half-time')) {
-            // speak(bossData.bossName + "重生已過2/4");
-            row.classList.add('half-time'); // 淡綠色
-          }
-        } else if (now >= (bossData.DefaultRespawnTime - part1Time)) {
-          if (!row.classList.contains('part1-time')) {
-            // speak(bossData.bossName + "重生已過1/4");
-            row.classList.add('part1-time'); // 淡藍
-          }
-        }
-      }
 
       // 文字置中
       row.cells[6].style.textAlign = 'center';
       row.cells[6].style.verticalAlign = 'middle';
 
+      
       // 計算死亡間格
       getTimeDiff(bossData);
       // 用來速算 % 用的 
       const getDeathPer = (obj) => (obj.已死亡 ?? 0) / (obj.respawnTime * 3600 * 1000);
-
-      row.cells[7].innerText = formatTimeDifference(bossData.已死亡) + "(" + getDeathPer(bossData).toFixed(2) +")";
+      let bossUpPer = getDeathPer(bossData).toFixed(2)
+      row.cells[7].innerText = formatTimeDifference(bossData.已死亡) + "(" + bossUpPer +")";
       
+
+      // 判斷Boss 出現的機率
+      let bossUprate = Math.abs(100-percentage) + (bossData.respawnCount > getBossCount(bossData) ? 50 : 0)
+      // 移除所有的class
+      row.className = ''
+      if (bossData.respawnCount > 0) {
+        // 還沒到重生時間
+        if (bossUprate >= 90) {
+            if (!row.classList.contains('boss顏色-90')) {
+                row.classList.add('boss顏色-90');
+            }
+        } else if (bossUprate >= 75) {
+          if (!row.classList.contains('boss顏色-75')) {
+              // speak(bossData.bossName + "重生已過3/4");
+              row.classList.add('boss顏色-75'); // 淡藍色
+          }
+        } else if (bossUprate >= 50) {
+          if (!row.classList.contains('boss顏色-50')) {
+            // speak(bossData.bossName + "重生已過2/4");
+            row.classList.add('boss顏色-50'); // 淡綠色
+          }
+        } else if (bossUprate >= 25) {
+          if (!row.classList.contains('boss顏色-25')) {
+            // speak(bossData.bossName + "重生已過1/4");
+            row.classList.add('boss顏色-25'); // 淡藍
+          }
+        }
+      }
+
 
       // 計算如果死亡時間超過間隔, 開始閃爍
       if (bossData.已死亡 > 0) {
