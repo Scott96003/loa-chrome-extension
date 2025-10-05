@@ -905,7 +905,7 @@ function showTooltip(event, data) {
   var windowWidth = window.innerWidth;
 
   // 如果懸浮框高度超過視窗高度，固定懸浮框的頂部靠近視窗頂部，確保顯示最上面的資料
-  if (tooltipHeight > (windowHeight/2)) {
+  if (event.clientY > (windowHeight/2)) {
     topPos -= (windowHeight/4);// 貼近視窗的頂部
   } 
   console.log(event.clientY,window.scrollY,tooltipHeight,windowHeight)
