@@ -606,7 +606,6 @@ function getTimeDiff(bossData) {
 
 
   let timeB = bossData.deathList[0]?.death || rebootTime
-  console.log(timeB)
   // 現在時間跟最後一次死亡時間相差
   let timeDifference = new Date() - new Date(timeB);
   let timeDiffFix = Math.abs(timeDifference);  // 時間差以毫秒為單位

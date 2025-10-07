@@ -297,32 +297,49 @@ function makeListMsg(listID) {
 
 // 紀錄下次需要更新boss輪迴時間的區間
 // 給預設時間24 才能夠找到最小的時間
-bossTimeRange = 24
+lastRefreshBossTime = 24
 
-// 設定每秒執行一次
+// 設定每 30 秒執行一次
 setInterval(() => {
   const now = new Date();
   const hours = now.getHours();
   const minutes = now.getMinutes();
-  console.log('每30秒檢查一次', hours, minutes, bossTimeRange)
 
-  // 檢查當前時間是否大於需要更新的時間
-  if (hours == bossTimeRange) {
+  // 1. 篩選出活躍 Boss 的重生結束「小時」
+  // 並且使用 Set 來自動去重，因為多個 Boss 可能在同一小時重生
+  const activeBossHoursSet = new Set(
+    bossListData
+      // 篩選出 ID 在 allDcCheckBoss 列表中的 Boss
+      .filter(item => allDcCheckBoss.includes(parseInt(item.id)))
+      // 提取重生間隔的結束小時 (例如 '20~21' 變成 '21')
+      .map(item => parseInt(item.重生間隔.split('~')[1]))
+  );
+
+  // 將 Set 轉為陣列，並排序 (數字排序)
+  const allTargetHours = [...activeBossHoursSet].sort((a, b) => a - b);
+
+  // 2. 找到下一個最近的小時
+  // 找出「大於或等於當前小時」的 Boss 時間
+  const nextHourToday = allTargetHours.find(h => h >= hours);
+
+  // 決定 newRange：
+  // 如果今天還有 Boss 沒過期 (nextHourToday 有值)，就選它。
+  // 否則，表示所有 Boss 都已經過了，選最早的那個 (即 allTargetHours[0])，這就是明天的第一個 Boss。
+  const newRange = nextHourToday !== undefined
+    ? nextHourToday
+    : allTargetHours[0]; 
+
+  // 輔助訊息輸出 (使用簡化後的變數)
+  console.log(`檢查時間: ${hours}:${minutes}，上次更新小時: ${lastRefreshBossTime}，下次目標小時: ${newRange}`);
+
+  // 3. 判斷是否需要更新
+  if (newRange != lastRefreshBossTime) {
       refresh();
-      console.log('要更新boss 輪迴時間前, 更新時間')
+      console.log('--- 觸發更新：Boss 輪迴時間已切換為下一個小時 ---');
       SendToDC(0);
-      // 更新後需要重置
-      bossTimeRange = 24;
+      
+      // 更新後設定時間
+      lastRefreshBossTime = newRange;
   }
-
-  // 檢查是否需要更新時間
-  var obj = bossListData.filter(function(item) {
-      return (allDcCheckBoss.includes(parseInt(item.id)) == true);
-  });
-  obj.forEach(function(item) {
-    // 如果想更新為兩者中較大的值
-    const itemHours = item.重生間隔.split('~')
-    // 找出最小的時間點, 來作為新的需要更新時間點的區間
-    bossTimeRange = Math.min(bossTimeRange, parseInt(itemHours[1]));
-  });
-}, 30 * 1000); // 每30秒（1秒）檢查一次
+  
+}, 30 * 1000); // 30秒
