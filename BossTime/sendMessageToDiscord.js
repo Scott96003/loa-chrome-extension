@@ -283,14 +283,8 @@ function makeListMsg(listID) {
   var obj = bossListData.filter(function(item) {
       return (listID.includes(parseInt(item.id)) == true);
   });
-  bossTimeRanges = [0,23]
-  obj.forEach(function(item) {
-    // 如果想更新為兩者中較大的值
-    const itemHours = item.重生間隔.split('~')
-    console.log(itemHours)
-    bossTimeRanges[0] = Math.max(bossTimeRanges[0], parseInt(itemHours[0]));
-    bossTimeRanges[1] = Math.min(bossTimeRanges[1], parseInt(itemHours[1]));
 
+  obj.forEach(function(item) {
     tableData.push({ count: item.respawnCount, 
       name: item.bossName, 
       spawnTime: item.重生間隔, 
@@ -301,39 +295,29 @@ function makeListMsg(listID) {
   return formatTableForDiscord(tableData)
 }
 
+// 紀錄下次需要更新boss輪迴時間的區間
+bossTimeRange = 0
 
-
-
-/**
- * 判斷給定的時間（小時）是否在 20:00 到 03:00 的區間內。
- * @param {number} hour - 介於 0 到 23 之間的小時數。
- * @returns {boolean} 如果時間在區間內，則回傳 true；否則回傳 false。
- */
-function isWithinTimeRange(hour) {
-  return (hour == bossTimeRanges[1])
-}
-
-bossTimeRanges = [0,23]
-isTaskRunning = false
 // 設定每秒執行一次
 setInterval(() => {
   const now = new Date();
   const hours = now.getHours();
   const minutes = now.getMinutes();
-  console.log('// 每30000毫秒（1秒）檢查一次', hours, minutes, bossTimeRanges)
-  // 檢查是否為整點（0 分 0 秒）
+  console.log('每30秒檢查一次', hours, minutes, bossTimeRange)
 
-  if (hours == bossTimeRanges[1]) {
-    // 檢查是否重複執行，確保只執行一次
-    if (!isTaskRunning) {
-      isTaskRunning = true;
+  // 檢查當前時間是否大於需要更新的時間
+  if (hours >= bossTimeRange) {
       refresh();
-      console.log('更新時間')
+      console.log('要更新boss 輪迴時間前, 更新時間')
       SendToDC(0);
-      // 等待幾秒後重設旗標，防止短時間內重複執行
-      setTimeout(() => {
-        isTaskRunning = false;
-      }, 60 * 1000);
-    }
   }
+
+  // 檢查是否需要更新時間
+  console.log 
+  bossListData.forEach(function(item) {
+    // 如果想更新為兩者中較大的值
+    const itemHours = item.重生間隔.split('~')
+    // 找出最小的時間點, 來作為新的需要更新時間點的區間
+    bossTimeRange = Math.min(bossTimeRange.time, parseInt(itemHours[1]));
+  });
 }, 30 * 1000); // 每30秒（1秒）檢查一次
