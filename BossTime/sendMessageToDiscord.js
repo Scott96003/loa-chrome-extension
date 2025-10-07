@@ -311,6 +311,8 @@ setInterval(() => {
       refresh();
       console.log('要更新boss 輪迴時間前, 更新時間')
       SendToDC(0);
+      // 更新後需要重置
+      bossTimeRange = 24;
   }
 
   // 檢查是否需要更新時間
