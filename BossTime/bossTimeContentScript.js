@@ -359,6 +359,7 @@ function getSpawnTime(currectTime, cycleHours) {
   return nextSpawnTime;
 }
 
+// 取得當前時間的時間區段
 function getSpawnRange(currectTime, cycleHours) {
   var time2 = getSpawnTime(currectTime, cycleHours);
   var time1 = time2 - (cycleHours * 60 * 60 * 1000);
@@ -551,6 +552,7 @@ function formatDateTime(date) {
     return date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, '0') + "-" + date.getDate().toString().padStart(2, '0') + " " + date.getHours().toString().padStart(2, '0') + ":" + date.getMinutes().toString().padStart(2, '0') + ":" + date.getSeconds().toString().padStart(2, '0');
 }
 
+// 將Date 轉換為 小時~小時 這樣的格式
 function formatDateTime_Easy(date, date2) {
 
     var dateString1 =date.getHours().toString().padStart(2, '0'); // + ":" + date.getMinutes().toString().padStart(2, '0') + ":" + date.getSeconds().toString().padStart(2, '0');

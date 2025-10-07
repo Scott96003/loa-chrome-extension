@@ -216,23 +216,23 @@ async function sendTextWebhook(webhookUrl, textContent) {
 }
 
 
-
+const 長老Boss = [45955,45956,45957,45958,45959,45960,45961,45962,45863]
+const 陣營Boss = [81082,45685,45674,45625,45753]
+const 奧塔Boss = [45513,45547,45606,45650,45652,45653,45654,45618,45672,45673]
+const 野外Boss = [45614,45801,46142,46141,99085,99086,99065]
+// 合併多個陣列
+const allDcCheckBoss = [...長老Boss, ...陣營Boss, ...奧塔Boss, ...野外Boss];
 
 function SendToDC(id, test=false) {
 
   const fixId = id % 100000;
   const isActive = id > 100000 ? true : false
-  const 長老Boss = [45955,45956,45957,45958,45959,45960,45961,45962,45863]
-  const 陣營Boss = [81082,45685,45674,45625,45753]
-  const 奧塔Boss = [45513,45547,45606,45650,45652,45653,45654,45618,45672,45673]
-  const 野外Boss = [45614,45801,46142,46141,99085,99086,99065]
-  // 合併多個陣列
-  const bossList = [...長老Boss, ...陣營Boss, ...奧塔Boss, ...野外Boss];
+
+
   var titleMsg = ""
   var msg = ""
-  var data = []
 
-  if (bossList.includes(fixId) || (fixId == 0)) {
+  if (allDcCheckBoss.includes(fixId) || (fixId == 0)) {
 
     if (fixId == 0) {
       titleMsg += "*** 重生輪迴時間刷新 ***\n"
@@ -314,7 +314,10 @@ setInterval(() => {
   }
 
   // 檢查是否需要更新時間
-  bossListData.forEach(function(item) {
+  var obj = bossListData.filter(function(item) {
+      return (allDcCheckBoss.includes(parseInt(item.id)) == true);
+  });
+  obj.forEach(function(item) {
     // 如果想更新為兩者中較大的值
     const itemHours = item.重生間隔.split('~')
     // 找出最小的時間點, 來作為新的需要更新時間點的區間
