@@ -296,7 +296,8 @@ function makeListMsg(listID) {
 }
 
 // 紀錄下次需要更新boss輪迴時間的區間
-bossTimeRange = 0
+// 給預設時間24 才能夠找到最小的時間
+bossTimeRange = 24
 
 // 設定每秒執行一次
 setInterval(() => {
@@ -313,11 +314,10 @@ setInterval(() => {
   }
 
   // 檢查是否需要更新時間
-  console.log 
   bossListData.forEach(function(item) {
     // 如果想更新為兩者中較大的值
     const itemHours = item.重生間隔.split('~')
     // 找出最小的時間點, 來作為新的需要更新時間點的區間
-    bossTimeRange = Math.min(bossTimeRange.time, parseInt(itemHours[1]));
+    bossTimeRange = Math.min(bossTimeRange, parseInt(itemHours[1]));
   });
 }, 30 * 1000); // 每30秒（1秒）檢查一次
