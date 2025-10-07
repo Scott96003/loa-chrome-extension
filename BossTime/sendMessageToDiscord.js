@@ -307,7 +307,7 @@ setInterval(() => {
   console.log('每30秒檢查一次', hours, minutes, bossTimeRange)
 
   // 檢查當前時間是否大於需要更新的時間
-  if (hours >= bossTimeRange) {
+  if (hours == bossTimeRange) {
       refresh();
       console.log('要更新boss 輪迴時間前, 更新時間')
       SendToDC(0);
