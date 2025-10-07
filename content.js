@@ -11,68 +11,66 @@ let bossCellValueClass = "embedFieldValue__623de";
 
 // 在 content script 中
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-  // 處理收到的消息
-  console.log("接收到來自BossTime Message:", message);
+    console.log("接收到來自BossTime Message:", message);
 
-  if (message.action == "getData") {
-    oldDayTime = message.dayTime;
-    getOldData();
-  }
+    if (message.action == "getData") {
+        oldDayTime = message.dayTime;
+        
+        // 使用 IIFE (立即執行函式) 來處理 async 邏輯並回覆
+        (async () => {
+            await getOldData();
+            // 在 getOldData 流程完全結束後，發送回應
+            sendResponse({status: "Data retrieval complete"}); 
+        })();
+
+        // **關鍵：返回 true，表示將會異步回覆**
+        return true; 
+    }
 });
 
-function getOldData() {
-  console.log("接收到來自BossTime Message:", "重新取得資料");
-  document.getElementsByClassName(bossScrollClass)[0].scrollTop = 0;
+// 輔助函式：等待指定時間
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-  // 如果oldDayTime 不等於空, 會持續上拉抓資料
-  if (oldDayTime !== "") {
-    let oldTime = new Date(oldDayTime)
-    let checkTime = new Date(lastDeathTime)
+async function getOldData() {
+    console.log("接收到來自BossTime Message:", "重新取得資料");
+    const bossScroll = document.getElementsByClassName(bossScrollClass)[0];
+    if (!bossScroll) return; // 安全檢查
 
-    if (checkTime > oldTime) {
-      console.log(oldDayTime, '小於', checkTime, '因此重新取得資料');
-      setTimeout(function() {
-        getOldData();
-      }, 1000);
-    } else {
-      console.log("oldTime:", oldTime, "checkTime:", checkTime)
-      console.log("自動抓取資料已完畢, 自動滾動到最下面")
-      oldDayTime = "";
-      setTimeout(function() {
-        checkIfDivScrolledToBottom();
-      }, 1000);
-      // 將資料滑到最底部
+    bossScroll.scrollTop = 0;
+
+    while (oldDayTime !== "") {
+        let oldTime = new Date(oldDayTime);
+        let checkTime = new Date(lastDeathTime);
+
+        if (checkTime > oldTime) {
+            console.log(oldDayTime, '小於', checkTime, '因此重新取得資料');
+            await delay(1000); // 等待 1 秒後再檢查
+            // **注意：資料抓取發生在 MutationObserver 裡，這裡只負責滾動和檢查時間**
+        } else {
+            console.log("自動抓取資料已完畢, 自動滾動到最下面");
+            oldDayTime = "";
+            await delay(1000); 
+            checkIfDivScrolledToBottom();
+            return; // 結束 getOldData 流程
+        }
     }
-  }
 }
 
 
 function compareDateTime(dateTime1, dateTime2) {
-  function parseDateTime(dateTime) {
-    const [datePart, timePart] = dateTime.split(' ');
-    const [year, month, day] = datePart.split('-').map(Number);
+  // 直接將 YYYY-MM-DD HH:MM 格式的字串轉為 Date 物件
+  const date1 = new Date(dateTime1.replace(/-/g, "/"));
+  const date2 = new Date(dateTime2.replace(/-/g, "/"));
 
-    const timeParts = timePart.split(':').map(Number);
-    let hours = 0, minutes = 0, seconds = 0;
-
-    if (timeParts.length === 2) {
-      [hours, minutes] = timeParts;
-    } else if (timeParts.length === 3) {
-      [hours, minutes, seconds] = timeParts;
-    }
-
-    return new Date(year, month - 1, day, hours, minutes, seconds);
-  }
-
-  const date1 = parseDateTime(dateTime1);
-  const date2 = parseDateTime(dateTime2);
-
-  if (date1 > date2) {
-    return 1; // dateTime1 大于 dateTime2
-  } else if (date1 < date2) {
-    return -1; // dateTime1 小于 dateTime2
+  // 使用 getTime() 比較毫秒數
+  if (date1.getTime() > date2.getTime()) {
+    return 1;
+  } else if (date1.getTime() < date2.getTime()) {
+    return -1;
   } else {
-    return 0; // dateTime1 等于 dateTime2
+    return 0;
   }
 }
 
