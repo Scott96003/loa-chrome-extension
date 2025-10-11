@@ -246,6 +246,20 @@ function SendToDC(id, test=false) {
     if (長老Boss.includes(fixId) || (fixId == 0)) {
       let topMsg = "=== 長老Boss ===\n"
       msg = titleMsg + topMsg + makeListMsg(長老Boss)
+      // 列出活動長老
+      var obj = bossListData.filter(function(item) {
+          return ((長老Boss.includes(parseInt(item.id)) == true) && (item.id != 45863));
+      });
+      const sum = obj.reduce((accumulator, currentValue) => {
+        return accumulator + currentValue.deathList.length;
+      }, 0); // 0 是初始值，確保從 0 開始加總。
+      const sumActive = obj.reduce((accumulator, currentValue) => {
+        const activeCount = currentValue.deathList.reduce((acc, value) => {
+          return acc + (value.isActive == true ? 1 : 0);
+        }, 0);
+        return accumulator + activeCount;
+      }, 0); // 0 是初始值，確保從 0 開始加總。
+      msg += "\n> 活動長老出現次數: " + sumActive + "/" + sum
       sendMsg(test,msg)
     }
     if (陣營Boss.includes(fixId) || (fixId == 0)) {
