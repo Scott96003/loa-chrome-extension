@@ -35,26 +35,45 @@ function delay(ms) {
 
 async function getOldData() {
     console.log("接收到來自BossTime Message:", "重新取得資料");
+    
+    // **檢查 1：bossScroll 是否存在**
     const bossScroll = document.getElementsByClassName(bossScrollClass)[0];
-    if (!bossScroll) return; // 安全檢查
+    if (!bossScroll) {
+        console.log("錯誤：bossScroll 元素未找到，函數停止。");
+        return; // 安全檢查
+    } 
 
+    console.log("bossScroll 找到，準備滾動到頂部。");
     bossScroll.scrollTop = 0;
+    
+    // **檢查 2：while 迴圈是否能啟動**
+    console.log(`初始 oldDayTime: '${oldDayTime}'`);
 
-    while (oldDayTime !== "") {
-        let oldTime = new Date(oldDayTime);
-        let checkTime = new Date(lastDeathTime);
 
-        if (checkTime > oldTime) {
-            console.log(oldDayTime, '小於', checkTime, '因此重新取得資料');
-            await delay(1000); // 等待 1 秒後再檢查
-            // **注意：資料抓取發生在 MutationObserver 裡，這裡只負責滾動和檢查時間**
-        } else {
-            console.log("自動抓取資料已完畢, 自動滾動到最下面");
-            oldDayTime = "";
-            await delay(1000); 
-            checkIfDivScrolledToBottom();
-            return; // 結束 getOldData 流程
-        }
+    let oldTime = new Date(oldDayTime);
+    let checkTime = new Date(lastDeathTime);
+    
+    // **檢查 3：兩個時間的比較結果**
+    console.log(`比較：oldDayTime (${oldDayTime}) vs lastDeathTime (${lastDeathTime})`);
+
+    if (checkTime > oldTime) {
+        console.log(oldDayTime, '小於', checkTime, '因此重新取得資料（MutationObserver 應處理滾動）');
+        // ... [保持滾動和等待邏輯]
+        
+        // **關鍵：如果希望繼續滾動，這裡需要加入滾動的程式碼**
+        // **例如： bossScroll.scrollTop += 500; 或其他觸發 MutationObserver 的操作**
+        await delay(1000);
+        getOldData();
+        // 注意：如果沒有觸發滾動來讓 MutationObserver 更新資料，
+        // oldDayTime 不會改變，下次檢查仍會是 checkTime > oldTime，造成無限循環（但這看起來不是您的問題）。
+
+    } else {
+        console.log("自動抓取資料已完畢, 自動滾動到最下面");
+        // ... [結束邏輯]
+        oldDayTime = "";
+        checkIfDivScrolledToBottom();
+        // **檢查 4：確認結束**
+        console.log("流程結束 (return)。");
     }
 }
 
