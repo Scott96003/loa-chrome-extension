@@ -621,7 +621,8 @@ function getTimeDiff(bossData) {
 function saveToLocalStorage() {
     console.log("將資料放到cookie");
     console.log(bossListData);
-    localStorage.setItem("bossList", JSON.stringify(bossListData));
+    // localStorage.setItem("bossList", JSON.stringify(bossListData));
+    saveBossListToDB(bossListData);
     localStorage.setItem("messageList", JSON.stringify(messageList));
     localStorage.setItem("rebootTime", rebootTime);
 }
@@ -641,72 +642,99 @@ function loadFromLocalStorage() {
   display.textContent = `${voiceCount}%`;
 
   // 取得boss清單
-  bossListData = JSON.parse(localStorage.getItem("bossList"));
-  if (bossListData == null){
-    bossListData = defaultData;
-  }
-
-  messageList = JSON.parse(localStorage.getItem("messageList"));
-  if (messageList == null){
-    messageList = [];
-  } else {
-    messageList.forEach(function(item) {
-      drawMessage(item);
-    });
-  }
-
-  // 如果沒有rebootTime 那就拿7天前的時間
-  let 取得7天前的時間 = new Date().setDate(new Date().getDate() - 7)
-  rebootTime = new Date(localStorage.getItem("rebootTime")) || 取得7天前的時間
-
-  if (取得7天前的時間 > rebootTime) {
-    rebootTime = 取得7天前的時間
-  }
-
-
-
-  var maxDeathTime = bossListData[0].death
-  // 找到最後一筆死亡資料
-  bossListData.forEach(function(data) {
-    if (new Date(maxDeathTime) < new Date(data.death)) {
-      maxDeathTime = data.death
+  // 將整個初始化邏輯包裝在一個 async IIFE 中
+  (async () => {
+    let bossListData = null;
+    
+    // ❗ 關鍵修正 1: 加上 await
+    try {
+        // 程式會在這裡暫停，直到 loadBossListFromDB 成功讀取資料或回傳 null
+        bossListData = await loadBossListFromDB();
+    } catch (error) {
+        // 關鍵修正 2: 處理載入錯誤
+        console.error("載入 Boss 清單時發生錯誤，將使用預設資料。", error);
+        bossListData = null; // 確保在發生錯誤時也使用預設資料
     }
-  })
+
+    // 關鍵修正 3: 確保判斷的是實際資料
+    if (bossListData === null || bossListData === undefined){
+        bossListData = defaultData;
+        console.log("已載入預設資料。");
+    } else {
+        console.log("已成功載入持久化資料。");
+    }
+
+    // 現在 bossListData 已經是正確的資料了 (可能是載入的或預設的)
+    // 您可以在這裡繼續執行應用程式初始化，例如：
+    // initializeApplication(bossListData);
+    // console.log("當前 Boss 資料:", bossListData);
+    if (bossListData == null){
+      bossListData = defaultData;
+    }
+
+    messageList = JSON.parse(localStorage.getItem("messageList"));
+    if (messageList == null){
+      messageList = [];
+    } else {
+      messageList.forEach(function(item) {
+        drawMessage(item);
+      });
+    }
+
+    // 如果沒有rebootTime 那就拿7天前的時間
+    let 取得7天前的時間 = new Date(new Date().setDate(new Date().getDate() - 7));
+    rebootTime = new Date(localStorage.getItem("rebootTime")) || 取得7天前的時間
+
+    if (取得7天前的時間 > rebootTime) {
+      rebootTime = 取得7天前的時間
+    }
 
 
 
-  // 重新畫出所有數據
-  console.log("重新使用BossListDat加載");
-  if (bossListData.length > 0) {
-      var bossTable = document.getElementById("bossList").getElementsByTagName("tbody")[0];
-      // 清空table
-      bossTable.innerHTML = "";
-      console.log(bossListData);
-      bossListData.forEach(function(boss) {
-        // 在新增資料時才計算一次
-        boss.result = findLostBoss(boss);
-        boss.respawnCount = boss.result.rebornCount;
-        // 將數據第一次畫出
-        addBossTR(boss);
-      })
-  }
-
-  // 刷新數據
-  refresh();
+    var maxDeathTime = bossListData[0].death
+    // 找到最後一筆死亡資料
+    bossListData.forEach(function(data) {
+      if (new Date(maxDeathTime) < new Date(data.death)) {
+        maxDeathTime = data.death
+      }
+    })
 
 
-  // 判斷是否需要重新獲取數據
-  console.log("最後死亡時間:", maxDeathTime, new Date())
 
-  let 最後記錄日期與今天相差 = (new Date() - new Date(maxDeathTime))/3600/24/1000
-  // 重新獲取資料
-  if (最後記錄日期與今天相差 > 7) {
-    // 複製一個新的 Date 物件，以免修改到原始的 now 變數
-    const sevenDaysAgo = new Date().setDate(new Date().getDate() - 7)
-    getOldData(sevenDaysAgo);
-  } else {
-    getOldData(new Date(maxDeathTime));
-  }
+    // 重新畫出所有數據
+    console.log("重新使用BossListDat加載");
+    if (bossListData.length > 0) {
+        var bossTable = document.getElementById("bossList").getElementsByTagName("tbody")[0];
+        // 清空table
+        bossTable.innerHTML = "";
+        console.log(bossListData);
+        bossListData.forEach(function(boss) {
+          // 在新增資料時才計算一次
+          boss.result = findLostBoss(boss);
+          boss.respawnCount = boss.result.rebornCount;
+          // 將數據第一次畫出
+          addBossTR(boss);
+        })
+    }
+
+    // 刷新數據
+    refresh();
+
+
+    // 判斷是否需要重新獲取數據
+    console.log("最後死亡時間:", maxDeathTime, new Date())
+
+    let 最後記錄日期與今天相差 = (new Date() - new Date(maxDeathTime))/3600/24/1000
+    // 重新獲取資料
+    if (最後記錄日期與今天相差 > 7) {
+      // 複製一個新的 Date 物件，以免修改到原始的 now 變數
+      const sevenDaysAgo = new Date().setDate(new Date().getDate() - 7)
+      getOldData(sevenDaysAgo);
+    } else {
+      getOldData(new Date(maxDeathTime));
+    }
+  })();
+
 }
 
 
@@ -997,7 +1025,7 @@ function getOldData(myDayTime) {
       console.log(`Tab ID: ${tab.id}, URL: ${tab.url}`);
       var dayTime = (function() {
           if (myDayTime) {
-              return myDayTime;
+              return new Date(myDayTime);
           } else {
               // 获取当前日期时间
               let currentDate = new Date();
