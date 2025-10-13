@@ -247,65 +247,36 @@ function SendToDC(id, test=false) {
       let topMsg = "=== 長老Boss ===\n"
       msg = titleMsg + topMsg + makeListMsg(長老Boss)
       // 列出活動長老
-      var obj = bossListData.filter(function(item) {
-          return ((長老Boss.includes(parseInt(item.id)) == true) && (item.id != 45863));
-      });
-      const sum = obj.reduce((accumulator, currentValue) => {
-        return accumulator + currentValue.deathList.length;
-      }, 0); // 0 是初始值，確保從 0 開始加總。
-      const sumActive = obj.reduce((accumulator, currentValue) => {
-        const activeCount = currentValue.deathList.reduce((acc, value) => {
-          return acc + (value.isActive == true ? 1 : 0);
-        }, 0);
-        return accumulator + activeCount;
-      }, 0); // 0 是初始值，確保從 0 開始加總。
-      msg += "\n> 活動長老出現次數: " + sumActive + "/" + sum
+      msg += "\n> 活動長老出現次數: " + msgFromActive(長老Boss)
       sendMsg(test,msg)
     }
     if (陣營Boss.includes(fixId) || (fixId == 0)) {
       let topMsg = "=== 陣營Boss ===\n"
       msg = titleMsg + topMsg + makeListMsg(陣營Boss)
       // 列出活動
-      var obj = bossListData.filter(function(item) {
-          return (陣營Boss.includes(parseInt(item.id)) == true);
-      });
-      const sum = obj.reduce((accumulator, currentValue) => {
-        return accumulator + currentValue.deathList.length;
-      }, 0); // 0 是初始值，確保從 0 開始加總。
-      const sumActive = obj.reduce((accumulator, currentValue) => {
-        const activeCount = currentValue.deathList.reduce((acc, value) => {
-          return acc + (value.isActive == true ? 1 : 0);
-        }, 0);
-        return accumulator + activeCount;
-      }, 0); // 0 是初始值，確保從 0 開始加總。
-      msg += "\n> 陣營活動王出現次數: " + sumActive + "/" + sum
+      msg += "\n> 陣營活動王出現次數: " + msgFromActive(陣營Boss)
       sendMsg(test,msg)
     }
     if (奧塔Boss.includes(fixId) || (fixId == 0)) {
       let topMsg = "=== 奧塔Boss ===\n"
       msg = titleMsg + topMsg + makeListMsg(奧塔Boss)
       // 列出活動
-      var obj = bossListData.filter(function(item) {
-          return (奧塔Boss.includes(parseInt(item.id)) == true);
-      });
-      const sum = obj.reduce((accumulator, currentValue) => {
-        return accumulator + currentValue.deathList.length;
-      }, 0); // 0 是初始值，確保從 0 開始加總。
-      const sumActive = obj.reduce((accumulator, currentValue) => {
-        const activeCount = currentValue.deathList.reduce((acc, value) => {
-          return acc + (value.isActive == true ? 1 : 0);
-        }, 0);
-        return accumulator + activeCount;
-      }, 0); // 0 是初始值，確保從 0 開始加總。
-      msg += "\n> 奧塔活動王出現次數: " + sumActive + "/" + sum
+      msg += "\n> 奧塔活動王出現次數: " + msgFromActive(奧塔Boss)
       sendMsg(test,msg)
     }
     if (野外Boss.includes(fixId) || (fixId == 0)) {
       let topMsg = "=== 野外Boss ===\n"
       msg = titleMsg + topMsg + makeListMsg(野外Boss)
       // 列出活動
+      msg += "\n> 野外活動王出現次數: " + msgFromActive(野外Boss)
+      sendMsg(test,msg)
+    }
+
+    // 列出活動王
+    function msgFromActive(bossIds) {
+      // 列出活動
       var obj = bossListData.filter(function(item) {
-          return (野外Boss.includes(parseInt(item.id)) == true);
+          return (bossIds.includes(parseInt(item.id)) == true);
       });
       const sum = obj.reduce((accumulator, currentValue) => {
         return accumulator + currentValue.deathList.length;
@@ -316,8 +287,7 @@ function SendToDC(id, test=false) {
         }, 0);
         return accumulator + activeCount;
       }, 0); // 0 是初始值，確保從 0 開始加總。
-      msg += "\n> 野外活動王出現次數: " + sumActive + "/" + sum
-      sendMsg(test,msg)
+      return sumActive + "/" + sum + "(" + ((sumActive/sum)*100).toFixed(2) + "%)"
     }
 
     // 發送訊息
