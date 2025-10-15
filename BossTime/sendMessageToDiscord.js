@@ -188,31 +188,96 @@ ${rowLines.join('\n')}
   return tableString;
 }
 
-// 發送純文字
+// 用於儲存所有待發送的 Webhook 請求
+// 每個元素將是一個包含 { webhookUrl, textContent } 的物件
+const webhookQueue = []; 
+
+// 用於實現每秒最多一次的節流機制
+let isProcessing = false; 
+
+// 用於實現發送失敗後的延遲重試
+const RETRY_DELAY = 2000; // 2 秒
+
+// 用於實現每秒最多一次的發送
+const THROTTLE_INTERVAL = 1000; // 1 秒
+
+/**
+ * 用戶調用的函數：將請求放入佇列並啟動處理流程。
+ */
 async function sendTextWebhook(webhookUrl, textContent) {
-    try {
-        const response = await fetch(webhookUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                content: textContent,
-                username: 'Boss監控機器人'
-            })
-        });
-        
-        if (response.ok) {
-            console.log('文字訊息發送成功');
-            return true;
-        } else {
-            console.error('發送失敗:', response.status);
-            return false;
-        }
-    } catch (error) {
-        console.error('發送錯誤:', error);
-        return false;
+    // 1. 將新的請求物件放入佇列
+    webhookQueue.push({ webhookUrl, textContent, retryCount: 0 });
+    console.log(`🔔 新請求已加入佇列。當前佇列長度: ${webhookQueue.length}`);
+    
+    // 2. 啟動處理流程 (如果目前沒有在跑的話)
+    if (!isProcessing) {
+        processWebhookQueue();
     }
+    
+    // 這個函數是非同步的，但我們不等待發送結果，而是由佇列處理
+    return true; 
+}
+
+/**
+ * 核心處理函數：負責取出佇列中的請求、執行發送、處理重試和節流。
+ */
+async function processWebhookQueue() {
+    // 設置標誌，表示處理流程正在運行中
+    isProcessing = true; 
+
+    // 只要佇列中還有待處理的請求，就持續運行
+    while (webhookQueue.length > 0) {
+        // 從佇列最前端取出要處理的請求
+        const request = webhookQueue.shift(); 
+        const { webhookUrl, textContent, retryCount } = request;
+
+        try {
+            console.log(`🚀 開始發送請求 (重試次數: ${retryCount})`);
+            
+            const response = await fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    content: textContent,
+                    username: 'Boss監控機器人'
+                })
+            });
+
+            if (response.ok) {
+                console.log('✅ 文字訊息發送成功');
+            } else {
+                // 發送失敗 (例如 4xx 或 5xx 狀態碼)
+                console.error(`❌ 發送失敗 (HTTP Status: ${response.status})。將於 ${RETRY_DELAY / 1000} 秒後重試...`);
+                
+                // 執行重試邏輯
+                // 1. 增加重試計數
+                request.retryCount = retryCount + 1;
+                // 2. 等待 2 秒
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+                // 3. 將請求放回佇列的**最前面**，確保優先處理
+                webhookQueue.unshift(request);
+            }
+        } catch (error) {
+            // 網路錯誤 (例如連線中斷)
+            console.error('❌ 網路發送錯誤:', error.message, `。將於 ${RETRY_DELAY / 1000} 秒後重試...`);
+            
+            // 執行重試邏輯 (與上面相同)
+            request.retryCount = retryCount + 1;
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            webhookQueue.unshift(request);
+        }
+
+        // --- 核心節流機制 ---
+        // 每次發送完畢後，等待 1 秒，確保每秒最多執行一次發送。
+        // 無論成功或失敗，都必須執行等待，以控制流量。
+        await new Promise(resolve => setTimeout(resolve, THROTTLE_INTERVAL));
+    }
+    
+    // 佇列清空後，重設標誌
+    isProcessing = false;
+    console.log('✨ Webhook 佇列處理完畢。');
 }
 
 
