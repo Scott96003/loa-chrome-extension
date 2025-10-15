@@ -1,12 +1,11 @@
 // 監聽來自 Background Script 的消息 (Step1)
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-    console.log("Boss死亡資訊:", message);
-    // 在這裡處理接收到的消息
-    console.log(bossListData);
+   // 在這裡處理接收到的消息
 
     var bossData = message;
     bossData.bossName = decodeURIComponent(message.bossName);
     bossData.emblem = decodeURIComponent(message.emblem);
+    console.log("Boss死亡資訊:", bossData);
     updateBossData(bossData);
 });
 // 監聽來自 Background Script 的消息 (Step2)
@@ -75,8 +74,6 @@ function updateBossData(bossData) {
           return false; // 過濾掉重複的條目
       });
 
-      console.log(bossListData[index].bossName + "死亡時間:");
-      console.log(bossListData[index].deathList);
       // 將日期字串轉換為日期物件並進行排序
       boss.deathList = boss.deathList.sort(function(a, b) {
         var a_deathTime = new Date(a.death).getTime();

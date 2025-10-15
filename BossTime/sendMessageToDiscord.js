@@ -356,7 +356,7 @@ setInterval(() => {
     : allTargetHours[0]; 
 
   // 輔助訊息輸出 (使用簡化後的變數)
-  console.log(`檢查時間: ${hours}:${minutes}，上次更新小時: ${lastRefreshBossTime}，下次目標小時: ${newRange}`);
+  console.log(`檢查時間: ${hours}:${minutes}，上次更新小時: ${lastRefreshBossTime}`);
 
   // 3. 判斷是否需要更新
   if (newRange != lastRefreshBossTime) {
