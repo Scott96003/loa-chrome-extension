@@ -618,13 +618,43 @@ function getTimeDiff(bossData) {
   bossData.已死亡 = timeDiffFix
 }
 
-function saveToLocalStorage() {
-    console.log("將資料放到cookie");
+// 1. 全域變數：用於儲存計時器 ID
+let saveTimer = null; 
+// 2. 常數：設定延遲時間 (30 秒 = 30,000 毫秒)
+const DEBOUNCE_DELAY = 30000; 
+
+/**
+ * 實際執行存檔的邏輯 (只會被計時器觸發)
+ */
+function actualSaveLogic() {
+    console.log("✅ 執行延遲存檔：30 秒內無操作，觸發實體存檔。");
     console.log(bossListData);
-    // localStorage.setItem("bossList", JSON.stringify(bossListData));
+    
+    // 假設 bossListData、messageList、rebootTime 已定義
     saveBossListToDB(bossListData);
     localStorage.setItem("messageList", JSON.stringify(messageList));
     localStorage.setItem("rebootTime", rebootTime);
+
+    // 存檔完成後，將計時器設為 null，表示目前沒有存檔正在排程中
+    saveTimer = null; 
+    console.log("⭐ 存檔完成，等待下一次操作。");
+}
+
+/**
+ * 用戶調用的函數：負責排程存檔
+ */
+function saveToLocalStorage() {
+    // 步驟 1: 清除前一個計時器 (重設延遲時間)
+    if (saveTimer) {
+        clearTimeout(saveTimer);
+        console.log("⏳ 檢測到新請求，清除上一個計時器，重新開始 30 秒倒數。");
+    }
+
+    // 步驟 2: 設置一個新的計時器
+    // 這表示：「在 30 秒後執行 actualSaveLogic」
+    saveTimer = setTimeout(actualSaveLogic, DEBOUNCE_DELAY);
+    
+    console.log("🔔 資料更新，已排程存檔。若 30 秒內沒有新的請求，將執行存檔。");
 }
 
 function loadFromLocalStorage() {
