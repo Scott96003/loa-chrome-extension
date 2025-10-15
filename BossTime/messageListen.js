@@ -82,7 +82,7 @@ function updateBossData(bossData) {
       });
       // 只取維修後的資料
       boss.deathList = boss.deathList.filter(item => {
-        return new Date(item.death) > rebootTime
+        return new Date(item.death) > config.rebootTime
       })
 
       // 在這裡處理 response，更新 bossListData，然後再呼叫 findLostBoss
@@ -122,7 +122,7 @@ function addMessage(bossData) {
       message += " 大隱龍 "
     }
     message += "【" + bossData.bossName + "】被 " +bossData.emblem + " 擊殺";
-    messageList.push(message);
+    config.messageList.push(message);
     drawMessage(message);
     showfloatingMessage(message);
 

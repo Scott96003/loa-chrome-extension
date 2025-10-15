@@ -1,7 +1,5 @@
 // bossListData 原始資料
 var bossListData = [];
-var messageList = [];
-var voiceCount = 50;
 var speakOpen = false;
 // 获取表格元素
 var bossTable = document.getElementById("bossList");
@@ -16,10 +14,19 @@ var messageCount = 0;
 
 // 設定基礎時間
 const baseTime = '2024-01-04T12:00:00';
-// 設定重開機時間
-var rebootTime = new Date('2024-01-04T12:00:00');
+
 // 過濾後的bossID
 var filterBossIDs = "";
+
+// 設定檔
+let config = {
+  // 紀錄下次需要更新boss輪迴時間的區間
+  // 給預設時間24 才能夠找到最小的時間
+  lastRefreshBossTime: 24,
+  // 設定重開機時間
+  rebootTime: new Date('2024-01-04T12:00:00'),
+  messageList: []
+}
 
 if (!debug) {
   console.log = function () {}; // 覆蓋 console.log，使其不執行任何操作
@@ -173,7 +180,7 @@ function confirmDateTime() {
   if (confirmation) {
     var now = new Date(selectedDateTime); // 获取当前时间
     // 設定重開機時間
-    rebootTime = now;
+    config.rebootTime = now;
 
     saveToLocalStorage();
 
@@ -497,7 +504,7 @@ function findLostBoss(bossData) {
   const deathTime = bossData.deathList;
   const segmentDuration = bossDurationHour * 60 * 60 * 1000; // 每個區段的持續時間(轉為毫秒)
 
-  const startPoint = getSpawnTime(rebootTime, bossDurationHour); // 指定的開始時間
+  const startPoint = getSpawnTime(config.rebootTime, bossDurationHour); // 指定的開始時間
 
   // 生成區段
   const segments = [];
@@ -509,13 +516,13 @@ function findLostBoss(bossData) {
   while (currentSegmentStart < currentTime) {
       const segmentEnd = new Date(currentSegmentStart.getTime() + segmentDuration);
       let segmentTimes = bossData.deathList.filter(dl => new Date(dl.death) >= currentSegmentStart &&  new Date(dl.death) < segmentEnd);
-      // 拿取得時段開始時間必須要大於rebootTime
+      // 拿取得時段開始時間必須要大於config.rebootTime
       segments.push({ start: currentSegmentStart, end: segmentEnd, deathList: segmentTimes});
       
       currentSegmentStart = segmentEnd; // 更新為下一個區段的開始時間
   }
   // 取得reboot 之後的死亡次數
-  let matchingTimes = bossData.deathList.filter(dl => new Date(dl.death) > rebootTime);
+  let matchingTimes = bossData.deathList.filter(dl => new Date(dl.death) > config.rebootTime);
 
 
 
@@ -604,7 +611,7 @@ function getTimeDiff(bossData) {
   bossData.deathList = bossData.deathList.filter(item => item.emblem !== undefined);
 
 
-  let timeB = bossData.deathList[0]?.death || rebootTime
+  let timeB = bossData.deathList[0]?.death || config.rebootTime
   // 現在時間跟最後一次死亡時間相差
   let timeDifference = new Date() - new Date(timeB);
   let timeDiffFix = Math.abs(timeDifference);  // 時間差以毫秒為單位
@@ -615,45 +622,6 @@ function getTimeDiff(bossData) {
   const diffInHours = Math.floor(timeDiffFix / (1000 * 60 * 60));
   // 採用毫秒計算
   bossData.已死亡 = timeDiffFix
-}
-
-// 1. 全域變數：用於儲存計時器 ID
-let saveTimer = null; 
-// 2. 常數：設定延遲時間 (30 秒 = 30,000 毫秒)
-const DEBOUNCE_DELAY = 30000; 
-
-/**
- * 實際執行存檔的邏輯 (只會被計時器觸發)
- */
-function actualSaveLogic() {
-    console.log("✅ 執行延遲存檔：30 秒內無操作，觸發實體存檔。");
-    console.log(bossListData);
-    
-    // 假設 bossListData、messageList、rebootTime 已定義
-    saveBossListToDB(bossListData);
-    localStorage.setItem("messageList", JSON.stringify(messageList));
-    localStorage.setItem("rebootTime", rebootTime);
-
-    // 存檔完成後，將計時器設為 null，表示目前沒有存檔正在排程中
-    saveTimer = null; 
-    console.log("⭐ 存檔完成，等待下一次操作。");
-}
-
-/**
- * 用戶調用的函數：負責排程存檔
- */
-function saveToLocalStorage() {
-    // 步驟 1: 清除前一個計時器 (重設延遲時間)
-    if (saveTimer) {
-        clearTimeout(saveTimer);
-        console.log("⏳ 檢測到新請求，清除上一個計時器，重新開始 30 秒倒數。");
-    }
-
-    // 步驟 2: 設置一個新的計時器
-    // 這表示：「在 30 秒後執行 actualSaveLogic」
-    saveTimer = setTimeout(actualSaveLogic, DEBOUNCE_DELAY);
-    
-    console.log("🔔 資料更新，已排程存檔。若 30 秒內沒有新的請求，將執行存檔。");
 }
 
 
@@ -791,8 +759,8 @@ function showTooltip(event, data) {
   msg += "<table>";
   segments.forEach(function(segment) {
     // 只顯示到維修的資料
-    if (rebootTime < segment.end) {
-      var needReboot = (rebootTime >= segment.start &&  rebootTime < segment.end)
+    if (config.rebootTime < segment.end) {
+      var needReboot = (config.rebootTime >= segment.start &&  config.rebootTime < segment.end)
 
 
       msg += "<tr>";
@@ -800,7 +768,7 @@ function showTooltip(event, data) {
       msg += "<td>";
       segment.deathList.forEach(function(deathTime) {
         if (needReboot == true) {
-          if (new Date(deathTime.death) < rebootTime) {
+          if (new Date(deathTime.death) < config.rebootTime) {
             msg += "<div style='color: yellow;'>重新開機" +rebootTime+"</div>";
             needReboot = false
           }
@@ -821,7 +789,7 @@ function showTooltip(event, data) {
       })
       //如果紀錄都刷完,還沒顯示
       if (needReboot == true) {
-        msg += "<div style='color: yellow;'>重新開機" +rebootTime+"</div>";
+        msg += "<div style='color: yellow;'>重新開機" +config.rebootTime+"</div>";
       }
       msg += "</td>";
       msg += "</tr>"
@@ -893,7 +861,6 @@ function drawMessage(message) {
 
 
 function filterTable(bossIDs) {
-  console.log(bossIDs)
     filterBossIDs = bossIDs;
     var table, tr, td, i, txtValue;
     var bossIdArray = bossIDs.split(',').map(name => name.trim().toLowerCase());

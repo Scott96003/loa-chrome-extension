@@ -321,9 +321,7 @@ function makeListMsg(listID) {
   return formatTableForDiscord(tableData)
 }
 
-// 紀錄下次需要更新boss輪迴時間的區間
-// 給預設時間24 才能夠找到最小的時間
-lastRefreshBossTime = 24
+
 
 // 設定每 30 秒執行一次
 setInterval(() => {
@@ -356,16 +354,16 @@ setInterval(() => {
     : allTargetHours[0]; 
 
   // 輔助訊息輸出 (使用簡化後的變數)
-  console.log(`檢查時間: ${hours}:${minutes}，上次更新小時: ${lastRefreshBossTime}`);
+  console.log(`檢查時間: ${hours}:${minutes}，上次更新小時: ${config.lastRefreshBossTime}`);
 
   // 3. 判斷是否需要更新
-  if (newRange != lastRefreshBossTime) {
+  if (newRange != config.lastRefreshBossTime) {
       refresh();
       console.log('--- 觸發更新：Boss 輪迴時間已切換為下一個小時 ---');
       SendToDC(0);
       
       // 更新後設定時間
-      lastRefreshBossTime = newRange;
+      config.lastRefreshBossTime = newRange;
   }
   
 }, 30 * 1000); // 30秒

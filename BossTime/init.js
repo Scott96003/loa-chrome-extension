@@ -4,15 +4,15 @@
 function initializeVoiceSettings() {
     // 使用 ||= (空值合併運算子) 簡化預設值設定
     let voiceCount = localStorage.getItem("voiceCount") || 50;
-    voiceCount = parseInt(voiceCount, 10); // 確保是數字
+    config.voiceCount = parseInt(voiceCount, 10); // 確保是數字
 
     const slider = document.getElementById("percentageSlider");
     const display = document.getElementById("percentageDisplay");
     
     // 檢查元素是否存在，避免錯誤
     if (slider && display) {
-        slider.value = voiceCount;
-        display.textContent = `${voiceCount}%`;
+        slider.value = config.voiceCount;
+        display.textContent = `${config.voiceCount}%`;
     }
 }
 
@@ -21,10 +21,10 @@ function initializeVoiceSettings() {
  */
 function initializeMessageList() {
     const storedMessageList = localStorage.getItem("messageList");
-    messageList = storedMessageList ? JSON.parse(storedMessageList) : [];
+    config.messageList = storedMessageList ? JSON.parse(storedMessageList) : [];
     
     // 使用 for...of 迴圈代替 forEach
-    for (const item of messageList) {
+    for (const item of config.messageList) {
         drawMessage(item);
     }
 }
@@ -36,7 +36,8 @@ function initializeRebootTime() {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7); // 取得 7 天前的時間
     
-    const storedRebootTime = localStorage.getItem("rebootTime");
+    const storedRebootTime = new Date(localStorage.getItem("rebootTime") || baseTime);
+    config.rebootTime = storedRebootTime;
     // 嘗試從 localStorage 載入，如果失敗則使用 7 天前的時間
     let rebootTimeCandidate = storedRebootTime ? new Date(storedRebootTime) : sevenDaysAgo;
     
@@ -45,7 +46,7 @@ function initializeRebootTime() {
         rebootTimeCandidate = sevenDaysAgo;
     }
     
-    rebootTime = rebootTimeCandidate; // 將結果賦值給全域/外部變數 rebootTime
+    config.rebootTime = rebootTimeCandidate; // 將結果賦值給全域/外部變數 rebootTime
 }
 
 /**
@@ -109,6 +110,8 @@ async function loadFromLocalStorage() {
     initializeVoiceSettings();
     initializeMessageList();
     initializeRebootTime();
+
+    config.lastRefreshBossTime = localStorage.getItem("lastRefreshBossTime") || 24;
     
     // 步驟 2: 載入並處理核心 Boss 資料
     const maxDeathTime = await loadAndInitializeBossData();

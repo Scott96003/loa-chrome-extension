@@ -52,9 +52,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // 監聽拉條值的變化
   slider.addEventListener("input", () => {
-      voiceCount = slider.value;
-      display.textContent = `${voiceCount}%`;
-      localStorage.setItem("voiceCount", voiceCount);
+      config.voiceCount = slider.value;
+      display.textContent = `${config.voiceCount}%`;
       // 將數值傳遞給其他地方使用（例如其他 JavaScript 函式）
       // 在這裡您可以執行您想要的操作
       // 例如：將百分比值傳遞給其他函式或存儲在變數中
