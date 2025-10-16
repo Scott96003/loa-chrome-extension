@@ -309,3 +309,61 @@ function checkIfDivScrolledToBottom() {
 }
 
 setInterval(checkIfDivScrolledToBottom, 60000);
+
+
+/**
+ * 尋找 rel="next" 的按鈕，並以指定秒數間隔點擊。
+ * @param {number} seconds - 每次點擊之間的間隔秒數 (例如: 3)。
+ */
+function autoClickNextButton(seconds) {
+    // 檢查秒數是否為有效數字
+    if (typeof seconds !== 'number' || seconds <= 0) {
+        console.error('請提供一個大於 0 的有效秒數。');
+        return;
+    }
+
+    // 檢查是否已經啟動過定時器，避免重複啟動
+    if (window._nextButtonInterval) {
+        console.warn('自動點擊已經在運行中。請先運行 stopAutoClick() 停止。');
+        return;
+    }
+
+    // 將秒數轉換為毫秒
+    const delayInMilliseconds = seconds * 1000;
+
+    // 啟動函式：負責尋找並點擊按鈕
+    const clickHandler = () => {
+        // 選擇器：找到擁有 rel="next" 屬性的 <button> 元素
+        const nextButton = document.querySelector('button[rel="next"]');
+
+        if (nextButton) {
+            console.log(`正在嘗試點擊 "下一頁" 按鈕... (間隔: ${seconds} 秒)`);
+            nextButton.click();
+        } else {
+            // 如果找不到按鈕，則停止定時器
+            stopAutoClick();
+            console.log('找不到按鈕，自動點擊停止。');
+        }
+    };
+
+    // 設定定時器
+    window._nextButtonInterval = setInterval(clickHandler, delayInMilliseconds);
+
+    console.log(`✅ 自動點擊已成功啟動，每 ${seconds} 秒點擊一次。`);
+    console.log('👉 如需停止，請在控制台運行：stopAutoClick()');
+}
+
+/**
+ * 停止自動點擊的函數。
+ */
+function stopAutoClick() {
+    if (window._nextButtonInterval) {
+        clearInterval(window._nextButtonInterval);
+        delete window._nextButtonInterval; // 清除全域變數
+        console.log('❌ 自動點擊已停止。');
+    } else {
+        console.log('自動點擊目前沒有運行。');
+    }
+}
+
+autoClickNextButton(10)
