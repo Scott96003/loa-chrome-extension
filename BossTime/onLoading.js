@@ -104,7 +104,12 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 window.onload = function() {
-  console.log("window onload");
+    // 1. 載入已儲存的欄位順序
+    loadColumnConfig(); 
+
+    // 2. 根據載入的配置繪製表格標頭
+    renderTableHeaders(); 
+    console.log("window onload");
     loadFromLocalStorage();
     setInterval(updateBossRemainingTime, 60*1000); // 每秒更新剩余时间
 };

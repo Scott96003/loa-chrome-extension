@@ -109,49 +109,71 @@ function addBossTR(data) {
   var newRow = bossList.insertRow();
   
   // 設置 id 屬性
+  // 設置 id 屬性
   newRow.setAttribute("id", "boss_"+ data.id);
 
-  var cell1 = newRow.insertCell(0);
-  var cell2 = newRow.insertCell(1);
-  var cell3 = newRow.insertCell(2);
-  var cell4 = newRow.insertCell(3);
-  var cell5 = newRow.insertCell(4);
-  var cell6 = newRow.insertCell(5);
-  var cell7 = newRow.insertCell(6);
-  var cell8 = newRow.insertCell(7);
-  var cell9 = newRow.insertCell(8);
-  cell1.innerHTML = "<button id='delete_" + bossName + "'>刪除</button>";
-  cell2.innerHTML = bossName;
-  cell2.setAttribute("contenteditable", "true"); // 可编辑
-  cell3.innerHTML = respawnTime; // 只显示数字
-  cell3.setAttribute("contenteditable", "false"); // 可编辑
-  // 文字水平置中
-  cell3.style.textAlign = 'center';
+  // 遍歷欄位配置，動態建立儲存格
+  columnConfig.forEach((config, index) => {
+    var cell = newRow.insertCell(index);
+    let cellContent = '';
 
-  cell4.innerHTML = deathTime; // 显示日期时间
-  cell4.setAttribute("contenteditable", "true"); // 可编辑
-  cell5.innerHTML = data.emblem || "未知"; // 显示血盟
-  cell6.innerHTML = formatDateTime(getRebirthTime(respawnTime)); // 显示日期时间
-  cell6.setAttribute("contenteditable", "false"); // 可编辑
-  cell7.innerHTML = ""; // 剩余时间，暂时为空
-  // cell8.innerHTML = getTimeGap(data);
-  // cell8.style.display = "none";
-  cell9.innerHTML = id;
-  // cell9.setAttribute("contenteditable", "true"); // 可编辑
+    // 處理特殊類型和內容
+    switch (config.type) {
+      case 'data':
+        cellContent = data[config.key] || '未知';
+        break;
+      case 'action':
+        cellContent = "<button id='delete_" + data.bossName + "'>刪除</button>";
+        break;
+      case 'computed':
+        // 計算欄位初始設置為空，將由 refresh 函式更新
+        cellContent = '';
+        break;
+    }
 
-  // 當滑鼠移過去時會多一個懸浮的文字欄位顯示我要的資料
-  // 當滑鼠離開就消失
-  cell4.addEventListener("mouseover", function(event) {
-    showTooltip(event, data);
-  });
-  cell4.addEventListener("mouseout", function() {
-    hideTooltip();
+    cell.innerHTML = cellContent;
+    
+    // 設置 cell id 或 class 以便在 updateBossRemainingTime 中快速定位
+    if (config.cellId) {
+        cell.setAttribute('data-col-id', config.cellId);
+    }
+
+    // 設置可編輯性
+    cell.setAttribute("contenteditable", config.editable ? "true" : "false"); 
+
+    // 應用樣式
+    if (config.style) {
+        Object.keys(config.style).forEach(key => {
+            cell.style[key] = config.style[key];
+        });
+    }
+
+    // 應用特殊格式/事件
+    if (config.format === 'tooltip' && config.key === 'death') {
+        cell.addEventListener("mouseover", function(event) {
+          showTooltip(event, data);
+        });
+        cell.addEventListener("mouseout", function() {
+          hideTooltip();
+        });
+    }
+
+    // 設置刪除按鈕事件
+    if (config.type === 'action') {
+        var deleteBtn = document.getElementById("delete_"+data.bossName);
+        if (deleteBtn) {
+            deleteBtn.addEventListener("click", function() {
+                deleteBoss(this);
+            });
+        }
+    }
+    
+    // 將 ID 放入儲存格屬性中，以便於刪除時查找
+    if (config.key === 'id') {
+        cell.setAttribute('data-boss-id', data.id);
+    }
   });
 
-  var deleteBtn = document.getElementById("delete_"+bossName);
-  deleteBtn.addEventListener("click", function() {
-      deleteBoss(this);
-  });
 }
 
 // 刷新數據
@@ -321,11 +343,24 @@ function sortListByRespawnTime() {
   }, 5000);
 }
 
+
 function deleteBoss(button) {
     var row = button.parentNode.parentNode;
-    var id = row.cells[8].innerText;
-    var bossName = row.cells[1].innerText;
+    
+    // 使用儲存在 ID 儲存格上的屬性來取得 ID
+    const idCell = row.querySelector('[data-boss-id]'); 
+    var id = idCell ? idCell.getAttribute('data-boss-id') : null;
 
+    // 由於 bossName 是可編輯的，這裡假設它在配置中的第二欄
+    const bossNameCellIndex = columnConfig.findIndex(c => c.key === 'bossName');
+    var bossName = row.cells[bossNameCellIndex].innerText;
+
+
+    if (!id || !bossName) {
+        alert("無法找到 Boss ID 或名稱，無法刪除。");
+        return;
+    }
+    
     var confirmation = confirm("確定要刪除此 Boss [" + id + "]" + bossName+ " 嗎？");
     if (confirmation) {
         bossListData = bossListData.filter(function(item) {
@@ -384,112 +419,124 @@ function updateBossRemainingTime(bossID = 0) {
       return;
     }
 
-      // 取得row
-      var row =document.getElementById("boss_"+bossData.id)
+    // 取得row
+    var row = document.getElementById("boss_"+bossData.id);
+    if (!row) return; // 安全檢查
 
-      var respawnTimeHours = parseInt(bossData.respawnTime);
-      let part1Time = respawnTimeHours * 0.75 * 3600000;
-      // 1/2
-      var halfTime = respawnTimeHours * 0.5 * 3600000;
-      // 2/3
-      var quarterTime = respawnTimeHours * 0.25 * 3600000;
-      var approachingTime = respawnTimeHours * 0.1 * 3600000;
+    // --- 計算邏輯 (不變) ---
+    var respawnTimeHours = parseInt(bossData.respawnTime);
+    var respawnDate = getRebirthTime(respawnTimeHours); // 计算预估出生时间
+    bossData.DefaultRespawnTime = respawnDate
+    var percentage = ((Math.abs(now - respawnDate) / (respawnTimeHours * 3600000)) * 100);
+
+
+
+    var lastRespawnTime = respawnDate - (respawnTimeHours * 60 * 60 * 1000);
+
+    // 1. 儲存舊的格式化字串
+    let oldFormattedInterval = bossData.重生間隔;
+
+    // 2. 計算並取得新的格式化字串
+    let newFormattedInterval = formatDateTime_Easy(new Date(lastRespawnTime), new Date(respawnDate));
+
+    // 3. 賦值 (更新 bossData)
+    bossData.重生間隔 = newFormattedInterval; 
+
+    // 4. 比較「舊的字串」與「新的字串」
+    if (oldFormattedInterval !== newFormattedInterval) {
+      needSortList = true;
+      // 只有當「格式化字串」確實改變時，才執行後續邏輯
+      bossData.result = findLostBoss(bossData);
+      bossData.respawnCount = bossData.result.rebornCount;
+    }
+
+    // 透過 key 或 data-col-id 找到儲存格並更新
+    const emblemCell = row.querySelector('[contenteditable="true"]:nth-child(' + (columnConfig.findIndex(c => c.key === 'emblem') + 1) + ')');
+    const deathTimeCell = row.querySelector('[contenteditable="true"]:nth-child(' + (columnConfig.findIndex(c => c.key === 'death') + 1) + ')');
+
+    if (deathTimeCell) deathTimeCell.innerText = bossData.death;
+    if (emblemCell) emblemCell.innerText = bossData.emblem;
+
+    // 預估出生時間 (cellId: respawn-range)
+    const respawnRangeCell = row.querySelector('[data-col-id="respawn-range"]');
+    if (respawnRangeCell) {
+        respawnRangeCell.innerText = bossData.重生間隔 + "(" +(100-percentage).toFixed(2)+"%)";
+    }
+
+    // 可能重生次數 (cellId: respawn-count)
+    bossData.respawnCount = bossData.result.rebornCount
+    const respawnCountCell = row.querySelector('[data-col-id="respawn-count"]');
+    if (respawnCountCell) {
+        respawnCountCell.innerText = bossData.respawnCount;
+        respawnCountCell.style.textAlign = 'center';
+        respawnCountCell.style.verticalAlign = 'middle';
+    }
       
-      var deathTime = new Date(bossData.death);
+    // 距離上次死亡/機率 (cellId: time-gap)
+    getTimeDiff(bossData);
+    const getDeathPer = (obj) => (obj.已死亡 ?? 0) / (obj.respawnTime * 3600 * 1000);
+    let bossUpPer = getDeathPer(bossData).toFixed(2)
+    const timeGapCell = row.querySelector('[data-col-id="time-gap"]');
+    if (timeGapCell) {
+        timeGapCell.innerText = formatTimeDifference(bossData.已死亡) + "(" + bossUpPer +")";
 
-      var respawnDate = getRebirthTime(respawnTimeHours); // 计算预估出生时间
-      bossData.DefaultRespawnTime = respawnDate
-      var respawnDate2 = new Date(deathTime.getTime() + respawnTimeHours * 3600000 * 2); // 计算预估2出生时间
+        // 閃爍效果邏輯
+        let respawnTimeInSeconds = bossData.respawnTime * 3600 * 1000;
+        if (bossData.已死亡 > respawnTimeInSeconds) {
+            timeGapCell.classList.add('blinking');
+        } else {
+            timeGapCell.classList.remove('blinking');
+        }
+    }
 
+    // 活動機率 (cellId: active-rate)
+    const activeRateCell = row.querySelector('[data-col-id="active-rate"]');
+    activeRateCell.innerHTML = msgFromActive([parseInt(bossData.id)]);
 
-      var lastRespawnTime = respawnDate - (respawnTimeHours * 60 * 60 * 1000);
-      var lastRespawnTime2 = respawnDate - (respawnTimeHours * 2 * 60 * 60 * 1000);
-      // 預估出生時間
-      var percentage = ((Math.abs(now - respawnDate) / (respawnTimeHours * 3600000)) * 100);
-
-      // 1. 儲存舊的格式化字串
-      let oldFormattedInterval = bossData.重生間隔;
-
-      // 2. 計算並取得新的格式化字串
-      let newFormattedInterval = formatDateTime_Easy(new Date(lastRespawnTime), new Date(respawnDate));
-
-      // 3. 賦值 (更新 bossData)
-      bossData.重生間隔 = newFormattedInterval; 
-
-      // 4. 比較「舊的字串」與「新的字串」
-      if (oldFormattedInterval !== newFormattedInterval) {
-        needSortList = true;
-        // 只有當「格式化字串」確實改變時，才執行後續邏輯
-        bossData.result = findLostBoss(bossData);
-        bossData.respawnCount = bossData.result.rebornCount;
-      }
-
-      row.cells[3].innerText = bossData.death;
-      row.cells[4].innerText = bossData.emblem;
-
-      row.cells[5].innerText = bossData.重生間隔 + "(" +(100-percentage).toFixed(2)+"%)";
-
-      // 可能重生次數
-      bossData.respawnCount = bossData.result.rebornCount
-      row.cells[6].innerText = bossData.respawnCount;
-
-      // 文字置中
-      row.cells[6].style.textAlign = 'center';
-      row.cells[6].style.verticalAlign = 'middle';
-
-      
-      // 計算死亡間格
-      getTimeDiff(bossData);
-      // 用來速算 % 用的 
-      const getDeathPer = (obj) => (obj.已死亡 ?? 0) / (obj.respawnTime * 3600 * 1000);
-      let bossUpPer = getDeathPer(bossData).toFixed(2)
-      row.cells[7].innerText = formatTimeDifference(bossData.已死亡) + "(" + bossUpPer +")";
-      
-
-      // 判斷Boss 出現的機率
-      let bossUprate = Math.abs(100-percentage) + (bossData.respawnCount > getBossCount(bossData) ? 50 : 0)
-      // 移除所有的class
-      row.className = ''
-      if (bossData.respawnCount > 0) {
-        // 還沒到重生時間
-        if (bossUprate >= 90) {
-            if (!row.classList.contains('boss顏色-90')) {
-                row.classList.add('boss顏色-90');
-            }
-        } else if (bossUprate >= 75) {
-          if (!row.classList.contains('boss顏色-75')) {
-              // speak(bossData.bossName + "重生已過3/4");
-              row.classList.add('boss顏色-75'); // 淡藍色
+    // 判斷Boss 出現的機率
+    let bossUprate = Math.abs(100-percentage) + (bossData.respawnCount > getBossCount(bossData) ? 50 : 0)
+    // 移除所有的class
+    row.className = ''
+    if (bossData.respawnCount > 0) {
+      // 還沒到重生時間
+      if (bossUprate >= 90) {
+          if (!row.classList.contains('boss顏色-90')) {
+              row.classList.add('boss顏色-90');
           }
-        } else if (bossUprate >= 50) {
-          if (!row.classList.contains('boss顏色-50')) {
-            // speak(bossData.bossName + "重生已過2/4");
-            row.classList.add('boss顏色-50'); // 淡綠色
-          }
-        } else if (bossUprate >= 25) {
-          if (!row.classList.contains('boss顏色-25')) {
-            // speak(bossData.bossName + "重生已過1/4");
-            row.classList.add('boss顏色-25'); // 淡藍
-          }
+      } else if (bossUprate >= 75) {
+        if (!row.classList.contains('boss顏色-75')) {
+            // speak(bossData.bossName + "重生已過3/4");
+            row.classList.add('boss顏色-75'); // 淡藍色
+        }
+      } else if (bossUprate >= 50) {
+        if (!row.classList.contains('boss顏色-50')) {
+          // speak(bossData.bossName + "重生已過2/4");
+          row.classList.add('boss顏色-50'); // 淡綠色
+        }
+      } else if (bossUprate >= 25) {
+        if (!row.classList.contains('boss顏色-25')) {
+          // speak(bossData.bossName + "重生已過1/4");
+          row.classList.add('boss顏色-25'); // 淡藍
         }
       }
+    }
 
 
-      // 計算如果死亡時間超過間隔, 開始閃爍
-      if (bossData.已死亡 > 0) {
-          let respawnTimeInSeconds = bossData.respawnTime * 3600 * 1000; // 將 respawnTime 轉換為秒
-          
-          if (bossData.已死亡 > respawnTimeInSeconds) {
-              // 加入閃爍效果
-              row.cells[7].classList.add('blinking');
-          } else {
-              // 移除閃爍效果          
-              row.cells[7].classList.remove('blinking');
-          }
-      } else {
-          // 處理無效時間格式的情況，例如移除閃爍效果
-          row.cells[7].classList.remove('blinking');
-      }
+    // 計算如果死亡時間超過間隔, 開始閃爍
+    if (bossData.已死亡 > 0) {
+        let respawnTimeInSeconds = bossData.respawnTime * 3600 * 1000; // 將 respawnTime 轉換為秒
+        
+        if (bossData.已死亡 > respawnTimeInSeconds) {
+            // 加入閃爍效果
+            row.cells[7].classList.add('blinking');
+        } else {
+            // 移除閃爍效果          
+            row.cells[7].classList.remove('blinking');
+        }
+    } else {
+        // 處理無效時間格式的情況，例如移除閃爍效果
+        row.cells[7].classList.remove('blinking');
+    }
   });
 
   // 如果數量有變動, 就要重新排列
@@ -497,6 +544,25 @@ function updateBossRemainingTime(bossID = 0) {
     sortListByRespawnTime();
   }
 }
+
+// 計算目標活動王數量
+function msgFromActive(bossIds) {
+  // 列出活動
+  var obj = bossListData.filter(function(item) {
+      return (bossIds.includes(parseInt(item.id)) == true);
+  });
+  const sum = obj.reduce((accumulator, currentValue) => {
+    return accumulator + currentValue.deathList.length;
+  }, 0); // 0 是初始值，確保從 0 開始加總。
+  const sumActive = obj.reduce((accumulator, currentValue) => {
+    const activeCount = currentValue.deathList.reduce((acc, value) => {
+      return acc + (value.isActive == true ? 1 : 0);
+    }, 0);
+    return accumulator + activeCount;
+  }, 0); // 0 是初始值，確保從 0 開始加總。
+  return sumActive + "/" + sum + "(" + ((sumActive/sum)*100).toFixed(2) + "%)"
+}
+
 
 // 找出缺失的時間區段
 function findLostBoss(bossData) {
@@ -866,16 +932,33 @@ function filterTable(bossIDs) {
     var bossIdArray = bossIDs.split(',').map(name => name.trim().toLowerCase());
     table = document.getElementById("bossList");
     tr = table.getElementsByTagName("tr");
+
+    // 1. 取得 ID 欄位的索引位置 (從 columnConfig 獲取)
+    // 找出配置陣列中 key 為 'id' 的物件索引
+    const idColumnIndex = columnConfig.findIndex(config => config.key === 'id'); 
+    
+    // 如果找不到 ID 欄位，則無法過濾，直接返回或給予提示
+    if (idColumnIndex === -1) {
+        console.error("錯誤：columnConfig 中找不到 'id' 欄位配置。無法執行過濾。");
+        return; 
+    }
+
     for (i = 1; i < tr.length; i++) {
       if (bossIDs === "") {
         tr[i].style.display = "";
       } else {
         
-        td = tr[i].getElementsByTagName("td")[8]; // 頭目 id 所在列
+        // 2. 使用動態索引來取得 ID 欄位的儲存格
+        // 注意：HTML DOM 集合也是從 0 開始索引
+        td = tr[i].getElementsByTagName("td")[idColumnIndex]; 
+        
         if (td) {
+            // 從儲存格的文字內容中獲取 ID
             txtValue = td.textContent || td.innerText;
-
-            if (bossIdArray.some(id => txtValue == id)) {
+            // 由於 ID 欄位可能包含其他屬性，如果我們像 deleteBoss 一樣將 ID 存在 data-boss-id 屬性中會更穩健
+            // 但為了保持簡單並符合您現有的結構，這裡仍使用 textContent
+            
+            if (bossIdArray.some(id => txtValue.trim() == id)) {
               tr[i].style.display = "";
             } else {
               tr[i].style.display = "none";

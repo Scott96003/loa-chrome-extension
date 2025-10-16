@@ -33,20 +33,8 @@ function initializeMessageList() {
  * 處理重啟時間 (rebootTime) 的邏輯
  */
 function initializeRebootTime() {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7); // 取得 7 天前的時間
-    
     const storedRebootTime = new Date(localStorage.getItem("rebootTime") || baseTime);
     config.rebootTime = storedRebootTime;
-    // 嘗試從 localStorage 載入，如果失敗則使用 7 天前的時間
-    let rebootTimeCandidate = storedRebootTime ? new Date(storedRebootTime) : sevenDaysAgo;
-    
-    // 確保 rebootTime 不早於 7 天前的時間
-    if (rebootTimeCandidate < sevenDaysAgo) {
-        rebootTimeCandidate = sevenDaysAgo;
-    }
-    
-    config.rebootTime = rebootTimeCandidate; // 將結果賦值給全域/外部變數 rebootTime
 }
 
 /**

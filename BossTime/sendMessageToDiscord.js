@@ -337,24 +337,6 @@ function SendToDC(id, test=false) {
       sendMsg(test,msg)
     }
 
-    // 列出活動王
-    function msgFromActive(bossIds) {
-      // 列出活動
-      var obj = bossListData.filter(function(item) {
-          return (bossIds.includes(parseInt(item.id)) == true);
-      });
-      const sum = obj.reduce((accumulator, currentValue) => {
-        return accumulator + currentValue.deathList.length;
-      }, 0); // 0 是初始值，確保從 0 開始加總。
-      const sumActive = obj.reduce((accumulator, currentValue) => {
-        const activeCount = currentValue.deathList.reduce((acc, value) => {
-          return acc + (value.isActive == true ? 1 : 0);
-        }, 0);
-        return accumulator + activeCount;
-      }, 0); // 0 是初始值，確保從 0 開始加總。
-      return sumActive + "/" + sum + "(" + ((sumActive/sum)*100).toFixed(2) + "%)"
-    }
-
     // 發送訊息
     function sendMsg(test,msg) {
       if (test == false) {

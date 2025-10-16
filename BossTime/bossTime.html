@@ -134,12 +134,28 @@
         .blinking {
             animation: blink 2s infinite; /* 將持續時間改為 2s */
         }
+        
+        .draggable-header {
+        cursor: grab;
+        user-select: none; /* 防止拖曳時文字被選取 */
+        }
+
+        .draggable-header.dragging {
+        opacity: 0.5;
+        border: 1px dashed #007bff;
+        }
+
+        .draggable-header.drag-over {
+        /* 拖曳經過時，顯示一個邊框來指示放置位置 */
+        border-left: 2px solid #007bff; 
+        }
 
     </style>
     <script type = "text/javascript" src = "config.js"></script>
     <script type = "text/javascript" src = "init.js"></script>
     <script type = "text/javascript" src = "save.js"></script>
     <script type = "text/javascript" src = "db.js"></script>
+    <script type = "text/javascript" src = "tablefunc.js"></script>
     <script type = "text/javascript" src = "bossList.js"></script>
     <script type = "text/javascript" src = "bossTimeContentScript.js"></script>
     <script type = "text/javascript" src = "messageListen.js"></script>
@@ -177,20 +193,7 @@
         <button data-boss-name="45955,45956,45957,45958,45959,45960,45961,45962,81082,45685,45674,45625,45753,45672,45673,45618,45653,45614,45801,46142,46141,99085,99086,99065,45863,45649">重點必須拿下</button>
     </div>
     <table id="bossList">
-        <thead>
-            <tr>
-                <th>操作</th>
-                <th>頭目名稱</th>
-                <th>間隔(h)</th>
-                <th>死亡時間</th>
-                <th>擊殺血盟</th>
-                <th>預估出生時間</th>
-                <th>可能重生次數</th>
-                <th>距離上次死亡</th>
-                <th>id</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
+        <tbody></tbody>        
     </table>
     <div class="message-container" id="messageContainer" style="display:block;"></div>
     <button id="toggleMessageContainer">顯示訊息</button>

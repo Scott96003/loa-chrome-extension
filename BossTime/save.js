@@ -37,7 +37,7 @@ function actualSaveLogic() {
 /**
  * 用戶調用的函數：負責排程存檔
  */
-function saveToLocalStorage() {
+function saveToLocalStorage(setTime = DEBOUNCE_DELAY) {
     // 步驟 1: 清除前一個計時器 (重設延遲時間)
     if (saveTimer) {
         clearTimeout(saveTimer);
@@ -46,7 +46,53 @@ function saveToLocalStorage() {
 
     // 步驟 2: 設置一個新的計時器
     // 這表示：「在 30 秒後執行 actualSaveLogic」
-    saveTimer = setTimeout(actualSaveLogic, DEBOUNCE_DELAY);
+    saveTimer = setTimeout(actualSaveLogic, setTime);
     
-    console.log("🔔 資料更新，已排程存檔。若 30 秒內沒有新的請求，將執行存檔。");
+    console.log("🔔 資料更新，已排程存檔。若 "+setTime/1000+" 秒內沒有新的請求，將執行存檔。");
+}
+
+
+/**
+ * 載入或初始化 columnConfig。
+ */
+function loadColumnConfig() {
+    const savedConfigString = localStorage.getItem(CONFIG_STORAGE_KEY);
+    
+    if (savedConfigString) {
+        try {
+            const savedKeys = JSON.parse(savedConfigString);
+            
+            // 重新建構配置陣列：保持原始配置的完整屬性，但使用已儲存的順序
+            const configMap = new Map(defaultColumnConfig.map(c => [c.key, c]));
+            columnConfig = savedKeys
+                .map(key => configMap.get(key))
+                .filter(config => config !== undefined); // 過濾掉已移除的舊欄位
+            
+            // 確保所有 defaultConfig 中的新欄位被加入到最後（如果未儲存過）
+            const existingKeys = new Set(columnConfig.map(c => c.key));
+            defaultColumnConfig.forEach(defaultCol => {
+                if (!existingKeys.has(defaultCol.key)) {
+                    columnConfig.push(defaultCol);
+                }
+            });
+
+            console.log("已從 localStorage 載入欄位順序。");
+            return;
+        } catch (e) {
+            console.error("解析儲存的配置失敗，使用預設配置。", e);
+        }
+    }
+    
+    // 如果沒有儲存，或者解析失敗，則使用預設配置的副本
+    columnConfig = [...defaultColumnConfig]; 
+    console.log("使用預設欄位順序。");
+}
+
+/**
+ * 儲存當前 columnConfig 的順序到 localStorage。
+ */
+function saveColumnConfig() {
+    // 只儲存 key 陣列以減少儲存大小，並在載入時重建
+    const keysToSave = columnConfig.map(config => config.key);
+    localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(keysToSave));
 }

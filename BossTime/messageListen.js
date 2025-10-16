@@ -102,7 +102,7 @@ function updateBossData(bossData) {
         // 增加死亡訊息
         addMessage(bossData);
         // 單獨更新數據
-        updateBossRemainingTime(boss.id);
+        updateBossRemainingTime(parseInt(boss.id));
         // 使用節流方法實現refresh
         throttle(refresh(), 500);
       }
