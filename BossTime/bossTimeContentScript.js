@@ -821,13 +821,13 @@ function showTooltip(event, data) {
 
   segments.sort((a,b) => b.start - a.start);
 
+  const 需要顯示的 = segments.splice(0, 20)
 
   msg += "<table>";
-  segments.forEach(function(segment) {
+  需要顯示的.forEach(function(segment) {
     // 只顯示到維修的資料
     if (config.rebootTime < segment.end) {
       var needReboot = (config.rebootTime >= segment.start &&  config.rebootTime < segment.end)
-
 
       msg += "<tr>";
       msg += "<td style='vertical-align: top;'>" + segment.start.getDate() + "(" + formatDateTime_Easy(segment.start, segment.end) + ")</td>";

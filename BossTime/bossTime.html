@@ -151,6 +151,10 @@
         border-left: 2px solid #007bff; 
         }
 
+        #dragonGateStatusDisplay {
+            white-space: pre-wrap; /* 確保換行符 (\n) 能被正確顯示 */
+        }
+
     </style>
     <script type = "text/javascript" src = "config.js"></script>
     <script type = "text/javascript" src = "init.js"></script>
@@ -162,6 +166,7 @@
     <script type = "text/javascript" src = "messageListen.js"></script>
     <script type = "text/javascript" src = "sendMessageToDiscord.js"></script>
     <script type = "text/javascript" src = "onloading.js"></script>
+    <script type = "text/javascript" src = "dragonGate.js"></script>
 </head>
 <body>
 
@@ -170,6 +175,7 @@
     <input type="number" id="respawnTime" placeholder="重生時間(小時)">
     <button id="btn_addToBossList">新增</button>
     <button id="btn_resetData">重置預設</button>
+    <button id="btn_saveToDB">儲存資料</button>
     <br>
     <button id="btn_refresh">重整</button>
     <button id="btn_refreshDeathTime">重新獲取死亡時間</button>
@@ -182,6 +188,10 @@
     <span style="color: var(--boss-quarter)">  重生已過3/4  </span>
     <span style="color: var(--boss-close-to)">  重生已過9/10  </span>
     <span style="color: var(--boss-double)">  兩輪都還沒出  </span>
+    </div>
+    <div id="dragonGateStatusContainer" style="width: 300px;margin: 20px 0; padding: 15px; border: 2px solid #5e47a9; border-radius: 8px;">
+        <h3 style="margin-top: 0; color: #a980ff;">龍門狀態追蹤</h3>
+        <div id="dragonGateStatusDisplay"></div>
     </div>
     <div id="filterButtons">
         <button data-boss-name="">顯示全部</button>

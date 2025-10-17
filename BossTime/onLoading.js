@@ -91,6 +91,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
   document.getElementById('confirmBtnForDeathTime').addEventListener('click', confirmDateTimeForDeathTime);
   document.getElementById('cancelBtnForDeathTime').addEventListener('click', cancelDateTimeForDeathTime);
+
+  document.getElementById('btn_saveToDB').addEventListener('click', actualSaveLogic);
+
 });
 
 document.addEventListener("DOMContentLoaded", function() {
