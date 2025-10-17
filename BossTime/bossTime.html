@@ -154,6 +154,23 @@
         #dragonGateStatusDisplay {
             white-space: pre-wrap; /* 確保換行符 (\n) 能被正確顯示 */
         }
+        .flex-container {
+            display: flex; /* 啟用 Flexbox 佈局 */
+            width: 100%; /* 設置總寬度 */
+            padding: 10px;
+        }
+         .flex-container button {
+            padding: 2px;
+            margin: 2px;
+         }
+        .box {
+            flex: 1; /* 關鍵：讓三個子元素平均佔據可用空間 */
+            /* flex: 1; 相當於 flex-grow: 1; flex-shrink: 1; flex-basis: 0; */
+            
+            padding: 20px;
+            margin: 5px;
+            text-align: center;
+        }
 
     </style>
     <script type = "text/javascript" src = "config.js"></script>
@@ -169,30 +186,37 @@
     <script type = "text/javascript" src = "dragonGate.js"></script>
 </head>
 <body>
+    <div class="flex-container">
+        <div style="width: 500px;">
+            <input type="number" id="bossid" placeholder="bossID">
+            <input type="text" id="bossName" placeholder="頭目名稱">
+            <input type="number" id="respawnTime" placeholder="重生時間(小時)">
+            <br>
+            <button id="btn_addToBossList">新增</button>
+            <button id="btn_resetData">重置預設</button>
+            <button id="btn_saveToDB">儲存資料</button>
+            <br>
+            <button id="btn_refresh">重整</button>
+            <button id="btn_refreshDeathTime">重新獲取死亡時間</button>
+            <button id="btn_reboot">維修重置時間</button>
+            <div>
+            音量大小:<input type="range" id="percentageSlider" min="0" max="100" step="1" value="50">
+            </div>
+            <div>
+            <span id="percentageDisplay">50%</span>
+            <span style="color: var(--boss顏色-25)">重生已過1/4  </span>
+            <span style="color: var(--boss顏色-50)">重生已過1/2  </span>
+            <span style="color: var(--boss顏色-75)">  重生已過3/4  </span>
+            <span style="color: var(--boss顏色-90)">  重生已過9/10  </span>
+            </div>
+        </div>
 
-    <input type="number" id="bossid" placeholder="bossID">
-    <input type="text" id="bossName" placeholder="頭目名稱">
-    <input type="number" id="respawnTime" placeholder="重生時間(小時)">
-    <button id="btn_addToBossList">新增</button>
-    <button id="btn_resetData">重置預設</button>
-    <button id="btn_saveToDB">儲存資料</button>
-    <br>
-    <button id="btn_refresh">重整</button>
-    <button id="btn_refreshDeathTime">重新獲取死亡時間</button>
-    <button id="btn_reboot">維修重置時間</button>
-    <div>
-    音量大小:<input type="range" id="percentageSlider" min="0" max="100" step="1" value="50">
-    <span id="percentageDisplay">50%</span>
-    <span style="color: var(--boss-part1)">重生已過1/4  </span>
-    <span style="color: var(--boss-half)">重生已過1/2  </span>
-    <span style="color: var(--boss-quarter)">  重生已過3/4  </span>
-    <span style="color: var(--boss-close-to)">  重生已過9/10  </span>
-    <span style="color: var(--boss-double)">  兩輪都還沒出  </span>
+        <div id="dragonGateStatusContainer" style="width: 300px;margin: 0px 0; padding: 15px; border: 2px solid #5e47a9; border-radius: 8px;">
+            <h3 style="margin-top: 0; color: #a980ff;">龍門狀態追蹤</h3>
+            <div id="dragonGateStatusDisplay"></div>
+        </div>
     </div>
-    <div id="dragonGateStatusContainer" style="width: 300px;margin: 20px 0; padding: 15px; border: 2px solid #5e47a9; border-radius: 8px;">
-        <h3 style="margin-top: 0; color: #a980ff;">龍門狀態追蹤</h3>
-        <div id="dragonGateStatusDisplay"></div>
-    </div>
+
     <div id="filterButtons">
         <button data-boss-name="">顯示全部</button>
         <button data-boss-name="1,2,91202,91605,91516">三大龍</button>

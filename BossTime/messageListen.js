@@ -101,12 +101,14 @@ function updateBossData(bossData) {
         }
         // 增加死亡訊息
         addMessage(bossData);
-        // 檢查是否觸發龍門
-        tracker.checkBossData(bossData);
+
         // 單獨更新數據
         updateBossRemainingTime(parseInt(boss.id));
         // 使用節流方法實現refresh
         throttle(refresh(), 500);
+        
+        // 檢查是否觸發龍門
+        tracker.checkBossData(bossData);
       }
     }
   });

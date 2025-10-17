@@ -120,7 +120,7 @@ class BossEventTracker {
         this.saveToCookie();
         // 發送到dc
         WEBHOOK_URL.forEach(url => {
-          sendTextWebhook(url, displayStatus());
+          sendTextWebhook(url, this.displayStatus());
         })
     }
 
