@@ -281,10 +281,11 @@ async function processWebhookQueue() {
 }
 
 
-const 長老Boss = [45955,45956,45957,45958,45959,45960,45961,45962,45863]
+const 長老Boss = [45955,45956,45957,45958,45959,45960,45961,45962]
 const 陣營Boss = [81082,45685,45674,45625,45753]
-const 奧塔Boss = [45513,45547,45606,45650,45652,45653,45654,45618,45672,45673]
-const 野外Boss = [45614,45801,46142,46141,99085,99086,99065]
+// const 奧塔Boss = [45513,45547,45606,45650,45652,45653,45654,45618,45672,45673]
+const 奧塔Boss = [45606,45653,45672,45673]
+const 野外Boss = [45614,45801,46142,46141,99085,99086,99065,45863]
 // 合併多個陣列
 const allDcCheckBoss = [...長老Boss, ...陣營Boss, ...奧塔Boss, ...野外Boss];
 
@@ -308,38 +309,49 @@ function SendToDC(id, test=false) {
       titleMsg += "***[" + (isActive == true ? '活動 ' : '') + findDeathBoss[0].bossName + '] 被 ' + findDeathBoss[0].emblem + ' 擊殺 ' + findDeathBoss[0].death + '***\n'
     }
 
-    if (長老Boss.includes(fixId) || (fixId == 0)) {
-      let topMsg = "=== 長老Boss ===\n"
-      msg = titleMsg + topMsg + makeListMsg(長老Boss)
-      // 列出活動長老
+    // if (長老Boss.includes(fixId) || (fixId == 0)) {
+    //   let topMsg = "=== 長老Boss ===\n"
+    //   msg = titleMsg + topMsg + makeListMsg(長老Boss)
+    //   // 列出活動長老
+    //   msg += "\n> 活動長老出現次數: " + msgFromActive(長老Boss)
+    //   sendMsg(test,msg)
+    // }
+    // if (陣營Boss.includes(fixId) || (fixId == 0)) {
+    //   let topMsg = "=== 陣營Boss ===\n"
+    //   msg = titleMsg + topMsg + makeListMsg(陣營Boss)
+    //   // 列出活動
+    //   msg += "\n> 陣營活動王出現次數: " + msgFromActive(陣營Boss)
+    //   sendMsg(test,msg)
+    // }
+    // if (奧塔Boss.includes(fixId) || (fixId == 0)) {
+    //   let topMsg = "=== 奧塔Boss ===\n"
+    //   msg = titleMsg + topMsg + makeListMsg(奧塔Boss)
+    //   // 列出活動
+    //   msg += "\n> 奧塔活動王出現次數: " + msgFromActive(奧塔Boss)
+    //   sendMsg(test,msg)
+    // }
+    // if (野外Boss.includes(fixId) || (fixId == 0)) {
+    //   let topMsg = "=== 野外Boss ===\n"
+    //   msg = titleMsg + topMsg + makeListMsg(野外Boss)
+    //   // 列出活動
+    //   msg += "\n> 野外活動王出現次數: " + msgFromActive(野外Boss)
+    //   sendMsg(test,msg)
+    // }
+
+    if (allDcCheckBoss.includes(fixId) || (fixId == 0)) {
+      msg = titleMsg + makeListMsg(allDcCheckBoss)
+      // 列出活動
+      // msg += "\n> 野外活動王出現次數: " + msgFromActive(野外Boss)
       msg += "\n> 活動長老出現次數: " + msgFromActive(長老Boss)
-      sendMsg(test,msg)
-    }
-    if (陣營Boss.includes(fixId) || (fixId == 0)) {
-      let topMsg = "=== 陣營Boss ===\n"
-      msg = titleMsg + topMsg + makeListMsg(陣營Boss)
-      // 列出活動
-      msg += "\n> 陣營活動王出現次數: " + msgFromActive(陣營Boss)
-      sendMsg(test,msg)
-    }
-    if (奧塔Boss.includes(fixId) || (fixId == 0)) {
-      let topMsg = "=== 奧塔Boss ===\n"
-      msg = titleMsg + topMsg + makeListMsg(奧塔Boss)
-      // 列出活動
       msg += "\n> 奧塔活動王出現次數: " + msgFromActive(奧塔Boss)
-      sendMsg(test,msg)
-    }
-    if (野外Boss.includes(fixId) || (fixId == 0)) {
-      let topMsg = "=== 野外Boss ===\n"
-      msg = titleMsg + topMsg + makeListMsg(野外Boss)
-      // 列出活動
+      msg += "\n> 陣營活動王出現次數: " + msgFromActive(陣營Boss)
       msg += "\n> 野外活動王出現次數: " + msgFromActive(野外Boss)
       sendMsg(test,msg)
     }
-
     // 發送訊息
     function sendMsg(test,msg) {
       if (test == false) {
+        // 發送到dc
         WEBHOOK_URL.forEach(url => {
           sendTextWebhook(url, msg);
         })
