@@ -33,7 +33,6 @@ function getCookie(name) {
 
 class BossEventTracker {
     constructor() {
-        this.lastBossDeathTime = null;
         this.gateOpenTime = null;
         this.gateCloseTime = null; // 該變數現在將保留上一次的關閉時間
         this.dragonIDs = [91516,91202,91605];
@@ -59,7 +58,6 @@ class BossEventTracker {
     saveToCookie() {
         // 將 Date 物件轉換為毫秒時間戳 (Number) 儲存，以確保精確
         const data = {
-            last: this.lastBossDeathTime ? this.lastBossDeathTime.getTime() : null,
             open: this.gateOpenTime ? this.gateOpenTime.getTime() : null,
             close: this.gateCloseTime ? this.gateCloseTime.getTime() : null,
         };
@@ -77,7 +75,6 @@ class BossEventTracker {
                 const data = JSON.parse(cookieData);
                 
                 // 將時間戳 (Number) 轉換回 Date 物件
-                this.lastBossDeathTime = data.last ? new Date(data.last) : null;
                 this.gateOpenTime = data.open ? new Date(data.open) : null;
                 this.gateCloseTime = data.close ? new Date(data.close) : null;
                 
@@ -86,7 +83,8 @@ class BossEventTracker {
                 console.error("[Cookie 錯誤] 無法解析龍門狀態 Cookie。", e);
             }
         }
-        if (this.lastBossDeathTime == null) {
+        // 如果沒有上次開門的時間
+        if (this.gateOpenTime == null) {
             // 執行分析
             this.processDeathArray(抓取所有龍的死亡時間()); 
         }
@@ -103,18 +101,14 @@ class BossEventTracker {
             newDeathTime >= this.gateOpenTime && newDeathTime < this.gateCloseTime) {
             return; 
         }
-
+        console.log(`[🚨 週期重啟 🚨] 龍門關閉後接收到擊殺紀錄，立即開啟新的龍門週期。`);
         // 2. 觸發開啟或重啟週期 (包含首次擊殺和龍門關閉後的擊殺)
         // 龍門週期開始：以本次擊殺時間作為開啟時間
         this.gateOpenTime = newDeathTime; 
         this.gateCloseTime = new Date(this.gateOpenTime.getTime() + this.GATE_DURATION_MS);
-        this.lastBossDeathTime = newDeathTime; 
 
-        if (!this.gateOpenTime) {
-             console.log(`[🚨 首次觸發 🚨] 記錄第一次 Boss 死亡時間並立即開啟龍門。`);
-        } else {
-             console.log(`[🚨 週期重啟 🚨] 龍門關閉後接收到擊殺紀錄，立即開啟新的龍門週期。`);
-        }
+        
+
         console.log(`開啟時間: ${this.gateOpenTime.toLocaleString()}，關閉時間: ${this.gateCloseTime.toLocaleString()}`);
         // 邏輯執行結束後，呼叫儲存
         this.saveToCookie();
@@ -129,7 +123,6 @@ class BossEventTracker {
      */
     processDeathArray(deathTimesArray) {
         // 分析前清空所有狀態
-        this.lastBossDeathTime = null;
         this.gateOpenTime = null;
         this.gateCloseTime = null;
         
@@ -167,23 +160,27 @@ class BossEventTracker {
 
             statusMessage = `
 🚨 龍門開啟中 🚨
-上次擊殺: ${formatTime(this.lastBossDeathTime)}
 開啟時間: ${formatTime(this.gateOpenTime)}
 關閉時間: ${formatTime(this.gateCloseTime)}
-剩餘時間: 約 ${minutesToClose} 分鐘 (週期保護中)
+剩餘時間: 約 ${minutesToClose} 分鐘  <t:${this.gateCloseTime.getTime() / 1000}:R> 
             `.trim();
         
         } else {
-            // B. 龍門已關閉 或 尚未擊殺
-            if (!this.lastBossDeathTime) {
-                statusMessage = `[狀態] 目前沒有任何擊殺紀錄。`;
-            } else {
-                statusMessage = `⚠️ 龍門已關閉。等待擊殺紀錄重啟週期。`;
-            }
-            
+            // B. 龍門已關閉
+            statusMessage = `⚠️ 龍門已關閉。`;
+
+
             // 顯示上次關閉時間
             if (this.gateCloseTime) {
                 statusMessage += `\n上次關閉時間: ${formatTime(this.gateCloseTime)}`;
+            }
+            if (this.gateOpenTime) {
+                // 將開啟時間清除
+                this.gateOpenTime = null;
+                // 發送到dc
+                WEBHOOK_URL.forEach(url => {
+                    sendTextWebhook(url, statusMessage);
+                })
             }
         }
         
@@ -192,11 +189,14 @@ class BossEventTracker {
 }
 
 function updateDragonGateDisplay() {
-    const statusHTML = tracker.displayStatus(); // 假設 tracker 是 BossEventTracker 的實例
-    const displayElement = document.getElementById('dragonGateStatusDisplay');
-    if (displayElement) {
-        // 使用 innerHTML 來渲染表格
-        displayElement.innerHTML = statusHTML;
+    // 龍門有開啟才處理
+    if (tracker.gateOpenTime) {
+        const statusHTML = tracker.displayStatus(); // 假設 tracker 是 BossEventTracker 的實例
+        const displayElement = document.getElementById('dragonGateStatusDisplay');
+        if (displayElement) {
+            // 使用 innerHTML 來渲染表格
+            displayElement.innerHTML = statusHTML;
+        }
     }
 }
 
