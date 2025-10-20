@@ -113,7 +113,7 @@ class BossEventTracker {
         // 邏輯執行結束後，呼叫儲存
         this.saveToCookie();
         // 發送到dc
-        sendTextWebhook(DragonGate_WEBHOOK_URL, statusMessage);
+        sendTextWebhook(DragonGate_WEBHOOK_URL, this.displayStatus());
     }
 
     /**
