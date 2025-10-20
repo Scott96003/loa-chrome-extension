@@ -113,9 +113,7 @@ class BossEventTracker {
         // 邏輯執行結束後，呼叫儲存
         this.saveToCookie();
         // 發送到dc
-        WEBHOOK_URL.forEach(url => {
-          sendTextWebhook(url, this.displayStatus());
-        })
+        sendTextWebhook(DragonGate_WEBHOOK_URL, statusMessage);
     }
 
     /**
@@ -177,10 +175,11 @@ class BossEventTracker {
             if (this.gateOpenTime) {
                 // 將開啟時間清除
                 this.gateOpenTime = null;
+                // 邏輯執行結束後，呼叫儲存
+                this.saveToCookie();
                 // 發送到dc
-                WEBHOOK_URL.forEach(url => {
-                    sendTextWebhook(url, statusMessage);
-                })
+                sendTextWebhook(DragonGate_WEBHOOK_URL, statusMessage);
+                
             }
         }
         
