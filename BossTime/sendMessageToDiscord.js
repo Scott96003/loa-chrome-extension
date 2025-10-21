@@ -308,7 +308,7 @@ function SendToDC(id, test=false) {
       elderBoss = bossListData.filter(function(item) {
           return (長老Boss.includes(parseInt(item.id)));
       });
-      if (config.lastRefreshBossTime == parseInt(elderBoss[0].重生間隔.split('~')[1])) {
+      if (config.lastRefreshBossTime == parseInt(elderBoss[0].重生間隔.split('~')[0])) {
         sendTextWebhook(Elder_Report_URL, titleMsg + makeListMsg(長老Boss, false));
       }
       
