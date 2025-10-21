@@ -302,6 +302,7 @@ function SendToDC(id, test=false) {
 
     if (fixId == 0) {
       titleMsg += "*** 重生輪迴時間刷新 ***\n"
+      sendTextWebhook(Elder_Report_URL, titleMsg + makeListMsg(長老Boss, false));
     } else {
       findDeathBoss = bossListData.filter(function(item) {
           return (parseInt(item.id) == fixId);
