@@ -63,7 +63,7 @@ function wrapText(text, maxWidth) {
 
 const MAX_NAME_WIDTH = 12; // <-- 設定名稱欄位的最大寬度 (例如 7個中文字)
 
-function formatTableForDiscord(data) {
+function formatTableForDiscord(data,顯示重生間隔 = true) {
   if (!data || data.length === 0) {
     return '沒有資料可顯示。';
   }
@@ -71,7 +71,7 @@ function formatTableForDiscord(data) {
   // 設定每一欄的標題、對應的資料鍵值，以及對齊方式
   const columns = [
     { key: 'count', header: '數量', align: 'left' }, // 數量靠右，並確保標題是空格
-    { key: 'spawnTime', header: '區段', align: 'left' },
+    ...(顯示重生間隔 ? [{ key: 'spawnTime', header: '區段', align: 'left' }] : []),
     { key: 'name', header: '名稱', align: 'left', maxWidth: MAX_NAME_WIDTH}, // <-- 加入最大寬度限制
     { key: 'guild', header: '血盟', align: 'left', maxWidth: MAX_NAME_WIDTH},
     { key: '已死亡', header: '已死亡', align: 'left' }
@@ -308,7 +308,7 @@ function SendToDC(id, test=false) {
       });
       titleMsg += "***[" + (isActive == true ? '活動 ' : '') + findDeathBoss[0].bossName + '] 被 ' + findDeathBoss[0].emblem + ' 擊殺 ' + findDeathBoss[0].death + '***\n'
       if (長老Boss.includes(parseInt(findDeathBoss[0].id))) {
-        sendTextWebhook(Elder_Report_URL, titleMsg);
+        sendTextWebhook(Elder_Report_URL, titleMsg + makeListMsg(長老Boss, false));
       }
     }
 
@@ -365,7 +365,7 @@ function SendToDC(id, test=false) {
   }
 }
 
-function makeListMsg(listID) {
+function makeListMsg(listID,顯示重生間隔 = true) {
   var tableData = []
 
   var obj = bossListData.filter(function(item) {
@@ -380,7 +380,7 @@ function makeListMsg(listID) {
       death: item.death,
       已死亡: formatTimeDifference(item.已死亡)})
   })
-  return formatTableForDiscord(tableData)
+  return formatTableForDiscord(tableData,顯示重生間隔)
 }
 
 
