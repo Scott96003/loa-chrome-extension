@@ -42,7 +42,9 @@ class BossEventTracker {
 
     resetGatePeriod() {
         // 僅清除 gateOpenTime，讓 gateCloseTime 保留歷史紀錄
-        this.gateOpenTime = null; 
+        this.gateOpenTime = null;
+        this.gateCloseTime = null;
+        this.processDeathArray(抓取所有龍的死亡時間()); 
     }
 
 
@@ -84,7 +86,7 @@ class BossEventTracker {
             }
         }
         // 如果沒有上次開門的時間
-        if (this.gateOpenTime == null) {
+        if (this.gateCloseTime == null) {
             // 執行分析
             this.processDeathArray(抓取所有龍的死亡時間()); 
         }
@@ -97,8 +99,8 @@ class BossEventTracker {
         const newDeathTime = new Date(newDeathTimeInput);
 
         // 1. 週期保護：判斷是否在龍門開啟期間 (忽略這次死亡)
-        if (this.gateOpenTime && this.gateCloseTime && 
-            newDeathTime >= this.gateOpenTime && newDeathTime < this.gateCloseTime) {
+        if (this.gateCloseTime && newDeathTime < this.gateCloseTime) {
+            console.log("不在龍門開啟期間 (忽略這次死亡)", newDeathTime)
             return; 
         }
         console.log(`[🚨 週期重啟 🚨] 龍門關閉後接收到擊殺紀錄，立即開啟新的龍門週期。`);
@@ -120,17 +122,61 @@ class BossEventTracker {
      * 從 Boss 死亡時間陣列中分析並更新龍門狀態。
      */
     processDeathArray(deathTimesArray) {
+        // 定義 3 小時的毫秒數
+        const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+        // 定義兩天的毫秒數 (48 小時)
+        const FORTY_EIGHT_HOURS_MS = 2 * 24 * 60 * 60 * 1000; 
         // 分析前清空所有狀態
         this.gateOpenTime = null;
         this.gateCloseTime = null;
         
         // 1. 標準化時間字串 (將 '-' 替換為 '/') 並排序
-        const sortedTimes = deathTimesArray
+        let sortedTimes = deathTimesArray
             .map(time => new Date(time.replace(/-/g, '/')))
             .filter(date => !isNaN(date.getTime()))
             .sort((a, b) => a.getTime() - b.getTime()); // 由早到晚排序
 
-        // 2. 依序處理每個事件
+        // --- 新增篩選步驟 ---
+
+        // 2.【判斷一：只取最後 48 小時的資料】
+        
+        // 取得最新 (最後一個) 死亡時間的時間戳記
+        if (sortedTimes.length > 0) {
+            const latestTime = sortedTimes[sortedTimes.length - 1].getTime();
+            
+            // 篩選出時間戳記在「最新時間 - 48 小時」之後的所有資料
+            sortedTimes = sortedTimes.filter(deathTime => {
+                return deathTime.getTime() >= latestTime - FORTY_EIGHT_HOURS_MS;
+            });
+        }
+
+        // 3.【判斷二：如果區間間隔超過 3 小時，只取最後那個區段的資料】
+
+        let lastSegment = [];
+        if (sortedTimes.length > 0) {
+            // 永遠將最後一個時間點納入最後區段
+            lastSegment.push(sortedTimes[sortedTimes.length - 1]);
+            
+            // 從倒數第二個時間點開始往前遍歷
+            for (let i = sortedTimes.length - 2; i >= 0; i--) {
+                const currentTime = sortedTimes[i];
+                const nextTime = sortedTimes[i + 1]; // 因為是倒著遍歷，所以下一個就是後面的時間
+
+                // 檢查兩個相鄰時間點的間隔是否超過 3 小時
+                if (nextTime.getTime() - currentTime.getTime() > THREE_HOURS_MS) {
+                    // 如果間隔超過，則代表這是一個新的區段，我們只取 `lastSegment`，並停止往前遍歷
+                    break; 
+                }
+                
+                // 如果間隔小於等於 3 小時，則將當前時間點加入最後區段
+                lastSegment.unshift(currentTime); // 使用 unshift 保持時間順序
+            }
+            
+            // 將篩選結果替換回 sortedTimes
+            sortedTimes = lastSegment;
+        }
+
+        // 4. 依序處理每個事件 (使用篩選後的 sortedTimes)
         for (const deathTime of sortedTimes) {
             this.processBossDeath(deathTime); 
         }
@@ -170,7 +216,7 @@ class BossEventTracker {
 
             // 顯示上次關閉時間
             if (this.gateCloseTime) {
-                statusMessage += `\n上次關閉時間: ${formatTime(this.gateCloseTime)}`;
+                statusMessage += `\n關閉時間: ${formatTime(this.gateCloseTime)}`;
             }
             if (this.gateOpenTime) {
                 // 將開啟時間清除
@@ -188,14 +234,11 @@ class BossEventTracker {
 }
 
 function updateDragonGateDisplay() {
-    // 龍門有開啟才處理
-    if (tracker.gateOpenTime) {
-        const statusHTML = tracker.displayStatus(); // 假設 tracker 是 BossEventTracker 的實例
-        const displayElement = document.getElementById('dragonGateStatusDisplay');
-        if (displayElement) {
-            // 使用 innerHTML 來渲染表格
-            displayElement.innerHTML = statusHTML;
-        }
+    const statusHTML = tracker.displayStatus(); // 假設 tracker 是 BossEventTracker 的實例
+    const displayElement = document.getElementById('dragonGateStatusDisplay');
+    if (displayElement) {
+        // 使用 innerHTML 來渲染表格
+        displayElement.innerHTML = statusHTML;
     }
 }
 
@@ -206,7 +249,7 @@ function 抓取所有龍的死亡時間() {
         // 確保 deathList 存在且是陣列
         if (boss.deathList && Array.isArray(boss.deathList)) {
             // 提取每個 deathList 元素中的 'death' 屬性
-            return boss.deathList.map(item => item.death);
+            return boss.deathList.map(item => item.death).sort();
         }
         return []; // 如果沒有 deathList，則返回空陣列
     });

@@ -246,6 +246,7 @@ async function processWebhookQueue() {
             });
 
             if (response.ok) {
+                console.log('發送到DC訊息：\n', textContent)
                 console.log('✅ 文字訊息發送成功');
             } else {
                 // 發送失敗 (例如 4xx 或 5xx 狀態碼)
@@ -302,7 +303,15 @@ function SendToDC(id, test=false) {
 
     if (fixId == 0) {
       titleMsg += "*** 重生輪迴時間刷新 ***\n"
-      sendTextWebhook(Elder_Report_URL, titleMsg + makeListMsg(長老Boss, false));
+
+      // 查看8老的資料
+      elderBoss = bossListData.filter(function(item) {
+          return (長老Boss.includes(parseInt(item.id)));
+      });
+      if (config.lastRefreshBossTime == parseInt(elderBoss[0].重生間隔.split('~')[1])) {
+        sendTextWebhook(Elder_Report_URL, titleMsg + makeListMsg(長老Boss, false));
+      }
+      
     } else {
       findDeathBoss = bossListData.filter(function(item) {
           return (parseInt(item.id) == fixId);
