@@ -135,3 +135,11 @@ async function loadFromLocalStorage() {
     
     console.log("--- loadFromLocalStorage 完成 ---");
 }
+
+function clearBossData(id) {
+    bossListData.forEach(function(item) {
+        item.death = ""
+        item.emblem = ""
+        item.deathList = []
+    })
+}

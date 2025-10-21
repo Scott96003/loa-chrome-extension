@@ -39,6 +39,7 @@ function updateBossData(bossData) {
         }
         return false
       });
+
       const newDeathEntry = {
         death: bossData.death,
         bossName: bossData.bossName,
@@ -90,7 +91,7 @@ function updateBossData(bossData) {
       boss.respawnCount = boss.result.rebornCount;
 
       // 在這裡進行當前死亡時間跟準備新增的時間做大小比較
-      if (item.death < newDeathEntry.death) {
+      if (item.death == "" || (new Date(item.death) < new Date(newDeathEntry.death))) {
         // 當死亡時間比現在大
         bossListData[index].death = newDeathEntry.death;
         bossListData[index].emblem = newDeathEntry.emblem;

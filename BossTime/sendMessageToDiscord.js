@@ -307,6 +307,9 @@ function SendToDC(id, test=false) {
           return (parseInt(item.id) == fixId);
       });
       titleMsg += "***[" + (isActive == true ? '活動 ' : '') + findDeathBoss[0].bossName + '] 被 ' + findDeathBoss[0].emblem + ' 擊殺 ' + findDeathBoss[0].death + '***\n'
+      if (長老Boss.includes(parseInt(findDeathBoss[0].id))) {
+        sendTextWebhook(Elder_Report_URL, titleMsg);
+      }
     }
 
     // if (長老Boss.includes(fixId) || (fixId == 0)) {
