@@ -229,6 +229,9 @@ const THROTTLE_INTERVAL = 1000; // 節流間隔 (1 秒，確保每秒最多一�
  * @returns {Promise<boolean>} 總是返回 true，因為發送是背景進行的。
  */
 async function sendTextWebhook(webhookUrl, textContent) {
+    if (webhookUrl == "") {
+        return true;
+    }
     // 1. 將新的請求物件 (包含重試次數) 放入佇列末尾
     webhookQueue.push({ webhookUrl, textContent, retryCount: 0 });
     console.log(`🔔 新請求已加入佇列。當前佇列長度: ${webhookQueue.length}`);
