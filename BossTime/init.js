@@ -119,18 +119,18 @@ async function loadFromLocalStorage() {
             const sevenDaysAgo = new Date();
             sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
             console.log(`⏳ 資料超過 7 天，從 ${sevenDaysAgo.toLocaleString()} 開始獲取舊資料。`);
-            getOldData(sevenDaysAgo);
+            取得Boss歷史資料(sevenDaysAgo);
         } else {
             // 否則，從最後記錄時間開始獲取數據
             console.log(`⏳ 資料在 7 天內，從最後死亡時間 ${maxDeathTime.toLocaleString()} 開始獲取舊資料。`);
-            getOldData(maxDeathTime);
+            取得Boss歷史資料(maxDeathTime);
         }
     } else {
         // 如果沒有任何 Boss 資料 (連預設都沒有)，從 7 天前開始獲取
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         console.log("🚫 無任何 Boss 記錄，從 7 天前開始獲取舊資料。");
-        getOldData(sevenDaysAgo);
+        取得Boss歷史資料(sevenDaysAgo);
     }
     
     console.log("--- loadFromLocalStorage 完成 ---");

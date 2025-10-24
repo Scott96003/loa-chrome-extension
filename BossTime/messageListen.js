@@ -1,12 +1,13 @@
 // 監聽來自 Background Script 的消息 (Step1)
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-
+    sendResponse({ status: "ok" });
     // **最可靠的過濾方式：** 判斷訊息是否來自另一個 Tab 的 Content Script
     if (sender.tab) {
         // 訊息來自一個 Tab 中的 Content Script，這是您要忽略的廣播
         // console.log("忽略來自 Content Script 的廣播訊息:", sender.tab.id);
-        return; 
+        return;
     }
+    
     // 在這裡處理接收到的消息
     var bossData = message;
     bossData.bossName = decodeURIComponent(message.bossName);

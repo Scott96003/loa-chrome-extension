@@ -1,14 +1,22 @@
+// ====== Configuration and State ======
 var messageQueue = [];
 var processingMessage = false;
 // 設定是否為debug模式
 const debug = false;
+
+// 優化：使用函數來判斷是否啟用 console.log
 if (!debug) {
-  console.log = function () {}; // 覆蓋 console.log，使其不執行任何操作
+  // 覆蓋 console.log，使其不執行任何操作
+  console.log = function () {}; 
 }
 console.log("background.js 啟動");
+
+
+// ====== Chrome API Callbacks ======
+
 // 監聽來自 Content Script 的消息
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-  // 在這裡處理收到的消息
+  // Content Script 的廣播訊息將在此處收到
   console.log("Received message from content script:", message);
   
   // 將訊息加入到訊息佇列中
@@ -18,77 +26,99 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (!processingMessage) {
     processNextMessage();
   }
-
-
 });
 
-function chromeSendMessage(tabId, data) {
-  chrome.tabs.sendMessage(tabId, data, function(response) {
+/**
+ * 發送訊息給指定 Tab，並在完成後處理佇列中的下一個訊息。
+ * @param {number} tabId - 目標分頁 ID。
+ * @param {object} data - 要傳送的訊息資料。
+ */
+function chromeSendMessage(tab, data) {
+  // 這裡使用單次訊息傳遞，如果資料量大建議改為 Port
+  chrome.tabs.sendMessage(tab.id, data, function(response) {
     if (chrome.runtime.lastError) {
-    
+      console.error("background.js 發送訊息到 ", tab.url, " 失敗,", chrome.runtime.lastError, "Data:", data);
     } else {
+      console.log("background.js 發送訊息到 ", tab.url, " 成功，回應:", response);
       // 處理收到的回應
     }
-    // 處理完畢後，處理下一個訊息
+    
+    // 處理完畢後，釋放鎖並處理下一個訊息 (無論成功或失敗)
     processingMessage = false;
     processNextMessage();
   });
 }
 
 
+/**
+ * 處理訊息佇列中的下一個訊息。
+ */
 function processNextMessage() {
   // 如果佇列中還有訊息，則取出下一個訊息進行處理
   if (messageQueue.length > 0) {
-    processingMessage = true;
-    var message = messageQueue.shift();
-
+    // 只有當 lock 未啟動時才設定 true，避免遞迴鎖定
+    if (!processingMessage) {
+        processingMessage = true;
+    }
+    // **修正：在查詢 Tab 之前就取出訊息，避免在 createBossTimePage 流程中遺失**
+    const message = messageQueue.shift(); 
 
     // 檢查是否已經存在 "bossTime.html" 頁面
     chrome.tabs.query({}, function(tabs) {
+      // 建議使用更精準的匹配，如頁面 URL 的子字串
       let bossTimeTab = tabs.find(tab => tab.title === "LOA-BossTime");
+      
       if (bossTimeTab) {
         // 如果頁面已經存在，則向其發送資料
-        chromeSendMessage(bossTimeTab.id, message);
+        chromeSendMessage(bossTimeTab, message);
       } else {
-        // 如果頁面不存在且未在創建中，則創建一個新的頁面並向其發送資料
-        createBossTimePage();
-        setTimeout(function() {
-          // 在這裡放置需要延遲處理的程式碼
-          processNextMessage();
-        }, 10000); // 1000 毫秒 = 1 秒
+        // **修正 1：移除 setTimeout 及其遞迴。**
+        // **修正 2：將 message 傳遞給 createBossTimePage。**
+        console.log("目標頁面不存在，創建新頁面並傳遞訊息。");
+        createBossTimePage(message);
+        
+        // 注意：這裡不調用 processNextMessage()。
+        // 下一個訊息會等到新分頁創建流程完全結束後，在 chromeSendMessage 內部被調用。
       }
     });
   
+  } else {
+    // 佇列為空時，釋放鎖
+    processingMessage = false;
   }
 }
 
 
 
+/**
+ * 創建 BossTime 頁面並在載入完成後發送訊息。
+ * @param {object} message - 要在頁面載入完成後發送的訊息。
+ */
+// **修正 3：確保函數接收 message 參數**
 function createBossTimePage(message) {
-  chrome.windows.getCurrent(function(currentWindow) {
-    var screenWidth = currentWindow.width;
-    var screenHeight = currentWindow.height;
-    var windowLeft = Math.max(0, Math.floor((screenWidth - 800) / 2));
-    var windowTop = Math.max(0, Math.floor((screenHeight - 600) / 2));
+  chrome.tabs.create({
+      url: "bossTime/bossTime.html",
+      active: true,
+  }, function(tab) {
+    console.log("New tab created with ID:", tab.id);
 
-    chrome.tabs.create({
-        url: "bossTime/bossTime.html",
-        active: true,
-    }, function(tab) {
-      // 新分頁創建成功後的回調函數
-      console.log("New tab created with ID:", tab.id);
-      // 在新分頁中執行其他操作，例如向新分頁發送消息
-
-      // 等待新頁面完全加載後再執行 JavaScript 代碼
-      chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
-          // 移除監聽器，以免重複執行 JavaScript 代碼
+    // 定義監聽器函數
+    const listener = function(tabId, changeInfo) {
+        
+        // **修正 4：正確檢查狀態，避免過早移除監聽器**
+        if (tabId === tab.id && changeInfo.status === 'complete') {
+          
+          // 處理完成後，才移除監聽器
           chrome.tabs.onUpdated.removeListener(listener);
           
-          if (tabId === tab.id && changeInfo.status === 'complete') {
-            // 創建新頁面後立即處理訊息
-            chromeSendMessage(tab.id, message);
-          }
-      }); 
-    });
+          // 創建新頁面後立即處理訊息
+          // 傳遞給新頁面的第一個訊息
+          chromeSendMessage(tab, message); 
+        }
+        // 如果狀態不是 'complete'，則不做任何事，等待下一次觸發。
+    };
+    
+    // 啟動監聽器
+    chrome.tabs.onUpdated.addListener(listener); 
   });
 }

@@ -219,7 +219,7 @@ function confirmDateTimeForDeathTime() {
   var confirmation = confirm("確定抓取時間為" + selectedDateTime + "到現在的時間嗎？");
   if (confirmation) {
     var now = new Date(selectedDateTime); // 获取選取的時間
-    getOldData(now);
+    取得Boss歷史資料(now);
   }
 }
 
@@ -969,9 +969,11 @@ function filterTable(bossIDs) {
     }
 }
 
+setInterval(() => {
+  checkDC的Boss頁面是否有開啟();
+}, 5000);
 
-
-function checkBossDataIsNew() {
+function checkDC的Boss頁面是否有開啟() {
   chrome.tabs.query({ url: 'https://discord.com/channels/1124664207921655830/1186526426770444329' }, (tabs) => {
     if (tabs.length === 0) {
         console.log("找不到符合條件的標籤頁，開啟一個新分頁並跳轉...");
@@ -980,17 +982,13 @@ function checkBossDataIsNew() {
         });
     }
   });
-
-  if (bossListData.length <= 0) {
-    getOldData();
-  }
 }
 
-function getOldData(myDayTime) {
-  console.log("準備發送取得舊資料的message", "時間:", myDayTime);
+function 取得Boss歷史資料(myDayTime) {
+  
   chrome.tabs.query({ url: 'https://discord.com/channels/1124664207921655830/1186526426770444329' }, (tabs) => {
     tabs.forEach((tab) => {
-      console.log(`Tab ID: ${tab.id}, URL: ${tab.url}`);
+     
       var dayTime = (function() {
           if (myDayTime) {
               return new Date(myDayTime);
@@ -1004,14 +1002,25 @@ function getOldData(myDayTime) {
           }
       })();
 
-      // 格式化成 YYYY-MM-DD HH:mm 格式
-      let dayTimeFormat = dayTime.toISOString().slice(0, 16).replace('T', ' ');
-
+      // 檢查是否有Boss資訊頁面
+      checkDC的Boss頁面是否有開啟();
       // 自動跳轉到DC分頁
       chrome.tabs.update(tab.id, { active: true });
 
-      chrome.tabs.sendMessage(tab.id, { action: 'getData', dayTime: dayTime }, (response) => {
-        console.log('Response from content script:', response);
+      const sendData = { 
+        action: 'getData', 
+        dayTime: dayTime 
+      }
+
+      console.log("準備發送取得舊資料的message, 時間:", dayTime);
+      console.log("對", tab.url, "傳送資料:", sendData);
+      chrome.tabs.sendMessage(tab.id, sendData, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("bossTimeContentScript.js 發送訊息到 ", tab.url, " 失敗,", chrome.runtime.lastError, "Data:", sendData);
+        } else {
+          console.log("bossTimeContentScript.js 發送訊息到 ", tab.url, " 成功，回應:", response);
+          // 處理收到的回應
+        }
       });
     });
   });

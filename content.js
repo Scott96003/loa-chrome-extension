@@ -1,8 +1,8 @@
 // 清單中的關鍵字
-var keywords = ["LoA363 頭目擊殺記錄 Boss Kills", "關鍵字2", "關鍵字3"];
+var keywords = ["LoA363 頭目擊殺記錄 Boss Kills"];
 
-var oldDayTime = "";
-var lastDeathTime = "2024-06-01 00:00";
+var 準備獲取Boss死亡的最早時間 = "";
+var 當前資料的最後時間 = "2024-06-01 00:00";
 let bossScrollClass = "scroller__36d07";
 let bossCellDivClass = ".gridContainer__623de";
 let bossCellNameClass = ".embedFieldName__623de";
@@ -14,13 +14,13 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     console.log("接收到來自BossTime Message:", message);
 
     if (message.action == "getData") {
-        oldDayTime = message.dayTime;
+        準備獲取Boss死亡的最早時間 = message.dayTime;
         
         // 使用 IIFE (立即執行函式) 來處理 async 邏輯並回覆
         (async () => {
-            await getOldData();
-            // 在 getOldData 流程完全結束後，發送回應
-            sendResponse({status: "Data retrieval complete"}); 
+            await 取得Boss歷史資料();
+            // 在 取得Boss歷史資料 流程完全結束後，發送回應
+            sendResponse({status: "content.js 接收" + sender.tab + "成功，資料：" + message}); 
         })();
 
         // **關鍵：返回 true，表示將會異步回覆**
@@ -33,7 +33,7 @@ function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function getOldData() {
+async function 取得Boss歷史資料() {
     console.log("接收到來自BossTime Message:", "重新取得資料");
     
     // **檢查 1：bossScroll 是否存在**
@@ -47,30 +47,30 @@ async function getOldData() {
     bossScroll.scrollTop = 0;
     
     // **檢查 2：while 迴圈是否能啟動**
-    console.log(`初始 oldDayTime: '${oldDayTime}'`);
+    console.log(`初始 準備獲取Boss死亡的最早時間: '${準備獲取Boss死亡的最早時間}'`);
 
 
-    let oldTime = new Date(oldDayTime);
-    let checkTime = new Date(lastDeathTime);
+    let selectTime = new Date(準備獲取Boss死亡的最早時間);
+    let dataTime = new Date(當前資料的最後時間);
     
     // **檢查 3：兩個時間的比較結果**
-    console.log(`比較：oldDayTime (${oldDayTime}) vs lastDeathTime (${lastDeathTime})`);
+    console.log(`比較：selectTime (${selectTime}) vs dataTime (${dataTime})`);
 
-    if (checkTime > oldTime) {
-        console.log(oldDayTime, '小於', checkTime, '因此重新取得資料（MutationObserver 應處理滾動）');
+    if (selectTime < dataTime) {
+        console.log(selectTime, '小於', dataTime, '因此重新取得資料（MutationObserver 應處理滾動）');
         // ... [保持滾動和等待邏輯]
         
         // **關鍵：如果希望繼續滾動，這裡需要加入滾動的程式碼**
         // **例如： bossScroll.scrollTop += 500; 或其他觸發 MutationObserver 的操作**
         await delay(1000);
-        getOldData();
+        取得Boss歷史資料();
         // 注意：如果沒有觸發滾動來讓 MutationObserver 更新資料，
-        // oldDayTime 不會改變，下次檢查仍會是 checkTime > oldTime，造成無限循環（但這看起來不是您的問題）。
+        // 準備獲取Boss死亡的最早時間 不會改變，下次檢查仍會是 dataTime > selectTime，造成無限循環（但這看起來不是您的問題）。
 
     } else {
         console.log("自動抓取資料已完畢, 自動滾動到最下面");
         // ... [結束邏輯]
-        oldDayTime = "";
+        準備獲取Boss死亡的最早時間 = "";
         checkIfDivScrolledToBottom();
         // **檢查 4：確認結束**
         console.log("流程結束 (return)。");
@@ -105,163 +105,161 @@ var observer = new MutationObserver(function(mutations) {
   });
 });
 
-// 啟動 MutationObserver，監聽 body 元素的變動
-observer.observe(document.body, { childList: true, subtree: true });
+
+const TARGET_CLASS = 'scrollerContent__36d07';
+
+// 1. 創建前導觀察者 (只監聽 body 級別)
+const setupObserver = new MutationObserver((mutations, obs) => {
+    const bossListContainer = document.getElementsByClassName(TARGET_CLASS)[0];
+    
+    if (bossListContainer) {
+        // 找到了目標容器！
+        
+        // 停止前導觀察者
+        obs.disconnect(); 
+        
+        // 啟動您的主要觀察者 (假設 observer 已經定義)
+        observer.observe(bossListContainer, { 
+            childList: true, 
+            subtree: true 
+        });
+        console.log(`✅ 容器找到，MutationObserver 已啟動。`);
+    }
+});
+
+// 2. 啟動前導觀察者，輕度監聽 body 即可
+setupObserver.observe(document.body, { 
+    childList: true, // 只監聽 body 的直接子節點
+    subtree: true    // 監聽所有子樹 (如果元素深埋其中)
+});
 
 // 檢查元素是否包含關鍵字
 function checkElementForKeywords(element) {
-  var pageContent = element.innerHTML;
-  keywords.forEach(function(keyword) {
-    if (pageContent.includes(keyword)) {
+  // **優化 1：使用 textContent 提高效能和安全性**
+  const pageContent = element.textContent;
+  
+  // 檢查是否包含任何一個關鍵字
+  if (!keywords.some(keyword => pageContent.includes(keyword))) {
+      return; // 快速跳出
+  }
 
-      var divMessages = element.querySelectorAll(bossCellDivClass);
+  const divMessages = element.querySelectorAll(bossCellDivClass);
 
-      divMessages.forEach(function(message) {
-        // 找到時間的文字
-        var timeText = "";
-        // 找到血盟的文字
-        var emblem = "未知血盟";
-        // 死亡地點
-        var localName = "";
+  divMessages.forEach(function(message) {
+    // **優化 2：統一使用 const/let**
+    let timeText = "";
+    let emblem = "未知血盟";
+    let localName = "";
 
-        var embedFieldNames = message.querySelectorAll(bossCellNameClass);
-        embedFieldNames.forEach(function(embedFieldName) {
-          // 確認定點
-          if (embedFieldName.innerText.trim() === "地點 Location") {
-            var nextDiv = embedFieldName.nextElementSibling;
-            if (nextDiv && nextDiv.classList.contains(bossCellValueClass)) {
-              var emblemNameSpans = nextDiv.querySelectorAll('span');
-              emblemNameSpans.forEach(function(span) {
-                localName += span.innerText;
-              });
-            }
-          }
+    const embedFieldNames = message.querySelectorAll(bossCellNameClass);
+    embedFieldNames.forEach(function(embedFieldName) {
+      // **優化 3：統一字段處理**
+      const fieldName = embedFieldName.innerText.trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
+      const nextDiv = embedFieldName.nextElementSibling;
+      
+      if (nextDiv && nextDiv.classList.contains(bossCellValueClass)) {
+        let valueText = "";
+        const valueSpans = nextDiv.querySelectorAll('span');
+        valueSpans.forEach(span => { valueText += span.innerText; });
 
-          if (embedFieldName.innerText.trim() === "時間 End at") {
-            var nextDiv = embedFieldName.nextElementSibling;
-            if (nextDiv && nextDiv.classList.contains(bossCellValueClass)) {
-              var timeSpans = nextDiv.querySelectorAll('span');
-              timeSpans.forEach(function(span) {
-                timeText += span.innerText;
-              });
-              // 將最後收到的死亡時間放入
-              lastDeathTime = timeText;
-            }
-          }
-          let cleanedText = embedFieldName.innerText.trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
-          if (cleanedText === "血盟 Pledge") {          
-            console.log("找到擊殺血盟");
-            var nextDiv = embedFieldName.nextElementSibling;
-            if (nextDiv && nextDiv.classList.contains(bossCellValueClass)) {
-              emblem = "";
-              var emblemNameSpans = nextDiv.querySelectorAll('span');
-              emblemNameSpans.forEach(function(span) {
-                emblem += span.innerText;
-              });
-            }
-          }          
-        });
+        switch (fieldName) {
+            case "地點 Location":
+                localName = valueText;
+                break;
+            case "時間 End at":
+                timeText = valueText;
 
-
-        // 找到符合條件的連結
-        var id = 0;
-        var bossName = "";
-        var linkElement = message.querySelector('a[href*="/mob/"]');
-        if (linkElement) {
-          // 使用正則表達式提取/mob/後面的數字和文字
-          var match = linkElement.href.match(/\/mob\/(\d+)\/(.+)$/);
-          if (match && match.length > 2) {
-            id = match[1];
-            bossName = match[2];
-          }
+                // 如果有取得舊資料需求
+                if (準備獲取Boss死亡的最早時間 != "") {
+                  當前資料的最後時間 = timeText;
+                }
+                break;
+            case "血盟 Pledge":
+                emblem = valueText || "未知血盟";
+                break;
         }
-
-        // 在這裡可以抓取需要的資料
-        var data = {
-          id: id,
-          type: 0, // 0:正常 1:小隱龍 2:大隱龍
-          bossName: bossName,
-          emblem: emblem,
-          death: timeText // 將找到的時間文字加入資料中
-        };
-        if (id != 0) {
-
-          if ("Training Place for Death Knight" == localName) {
-            data.type = 1;
-          }
-
-          if ("Dwarven Village" == localName) {
-            data.type = 2;
-          }
-
-          if (["奇怪的村落 Strange Village", "奇岩競技場 Giran Colosseum", "", "從前的說話之島 Memories Island"].includes(localName)) {
-            console.log("跳過當前換下一筆boss資料 地點", decodeURIComponent(bossName), localName);
-            // 跳過當前換下一筆boss資料
-            return;
-          }
+      }
+    });
 
 
+    // 找到符合條件的連結
+    let id = 0;
+    let bossName = "";
+    const linkElement = message.querySelector('a[href*="/mob/"]');
+    if (linkElement) {
+      const match = linkElement.href.match(/\/mob\/(\d+)\/(.+)$/);
+      if (match && match.length > 2) {
+        id = match[1];
+        bossName = match[2];
+      }
+    }
 
-          if ((localName === "傲慢之塔 Tower of Insolence") && (id != 46220) && (id != 146220) && (id != 46271)) {
-            console.log("跳過當前換下一筆boss資料 地點",decodeURIComponent(bossName), id, localName);
-            // 跳過當前換下一筆boss資料
-            return;
-          }
+    if (id != 0) {
+      let type = 0; // 0:正常 1:小隱龍 2:大隱龍
+      if (localName === "Training Place for Death Knight") {
+        type = 1;
+      } else if (localName === "Dwarven Village") {
+        type = 2;
+      }
 
-          //           
-          if ((localName === "傲慢之塔 10樓 Tower of Insolence 10F") && (id != 45513) && (id != 145513)) {
-            console.log("百鬼活動跳過紀錄 地點",decodeURIComponent(bossName), id, localName);
-            // 跳過當前換下一筆boss資料
-            return;
-          }
-          if ((localName === "傲慢之塔 20樓 Tower of Insolence 20F") && (id != 45547) && (id != 145547)) {
-            console.log("百鬼活動跳過紀錄 地點",decodeURIComponent(bossName), id, localName);
-            // 跳過當前換下一筆boss資料
-            return;
-          }
-          if ((localName === "傲慢之塔 30樓 Tower of Insolence 30F") && (id != 45606) && (id != 145606)) {
-            console.log("百鬼活動跳過紀錄 地點",decodeURIComponent(bossName), id, localName);
-            // 跳過當前換下一筆boss資料
-            return;
-          }
-          if ((localName === "傲慢之塔 40樓 Tower of Insolence 40F") && (id != 45650) && (id != 145650)) {
-            console.log("百鬼活動跳過紀錄 地點",decodeURIComponent(bossName), id, localName);
-            // 跳過當前換下一筆boss資料
-            return;
-          }
-          if ((localName === "傲慢之塔 50樓 Tower of Insolence 50F") && (id != 45652) && (id != 145652)) {
-            console.log("百鬼活動跳過紀錄 地點",decodeURIComponent(bossName), id, localName);
-            // 跳過當前換下一筆boss資料
-            return;
-          }
-          if ((localName === "傲慢之塔 60樓 Tower of Insolence 60F") && (id != 45653) && (id != 145653)) {
-            console.log("百鬼活動跳過紀錄 地點",decodeURIComponent(bossName), id, localName);
-            // 跳過當前換下一筆boss資料
-            return;
-          }
-          if ((localName === "傲慢之塔 70樓 Tower of Insolence 70F") && (id != 45654) && (id != 145654)) {
-            console.log("百鬼活動跳過紀錄 地點",decodeURIComponent(bossName), id, localName);
-            // 跳過當前換下一筆boss資料
-            return;
-          }
-          if ((localName === "傲慢之塔 80樓 Tower of Insolence 80F") && (id != 45618) && (id != 145618)) {
-            console.log("百鬼活動跳過紀錄 地點",decodeURIComponent(bossName), id, localName);
-            // 跳過當前換下一筆boss資料
-            return;
-          }
-          if ((localName === "傲慢之塔 90樓 Tower of Insolence 90F") && (id != 45672) && (id != 145672)) {
-            console.log("百鬼活動跳過紀錄 地點",decodeURIComponent(bossName), id, localName);
-            // 跳過當前換下一筆boss資料
-            return;
-          }
+      // **優化 5：將所有跳過邏輯抽取到 shouldSkipBoss 輔助函數**
+      if (shouldSkipBoss(localName, id, bossName)) {
+        console.log("跳過當前換下一筆boss資料 ", decodeURIComponent(bossName), localName);
+        return; // 跳過當前換下一筆boss資料
+      }
+      
+      // 在這裡可以抓取需要的資料
+      const data = { id, type, bossName, emblem, death: timeText };
 
-          // 將資料傳送到 Background Script
-          chrome.runtime.sendMessage(data);
-        }
-
-      })
+      console.log("將資料送出:",data)
+      // 將資料傳送到 Background Script
+      chrome.runtime.sendMessage(data);
     }
   });
+}
+
+
+// **建議將這個輔助函數 shouldSkipBoss 放在外面**
+// **以便與 checkElementForKeywords 平級，並在全域範圍內定義。**
+function shouldSkipBoss(localName, id, bossName) {
+    // 轉換 ID 為數字進行可靠比較
+    const numId = Number(id);
+
+    // 排除區域清單
+    const excludedAreas = [
+        "奇怪的村落 Strange Village", 
+        "奇岩競技場 Giran Colosseum", 
+        "", 
+        "從前的說話之島 Memories Island"
+    ];
+    if (excludedAreas.includes(localName)) {
+        return true;
+    }
+
+    // 傲慢之塔 (非樓層)：只允許特定 ID
+    if ((localName === "傲慢之塔 Tower of Insolence") && ![46220, 146220, 46271].includes(numId)) {
+        return true;
+    }
+
+    // 百鬼活動樓層檢查：只有在特定樓層且 ID 不符合時才跳過
+    const TOI_EXCEPTIONS = {
+        "傲慢之塔 10樓 Tower of Insolence 10F": [45513, 145513],
+        "傲慢之塔 20樓 Tower of Insolence 20F": [45547, 145547],
+        "傲慢之塔 30樓 Tower of Insolence 30F": [45606, 145606],
+        "傲慢之塔 40樓 Tower of Insolence 40F": [45650, 145650],
+        "傲慢之塔 50樓 Tower of Insolence 50F": [45652, 145652],
+        "傲慢之塔 60樓 Tower of Insolence 60F": [45653, 145653],
+        "傲慢之塔 70樓 Tower of Insolence 70F": [45654, 145654],
+        "傲慢之塔 80樓 Tower of Insolence 80F": [45618, 145618],
+        "傲慢之塔 90樓 Tower of Insolence 90F": [45672, 145672],
+    };
+
+    if (TOI_EXCEPTIONS[localName] && !TOI_EXCEPTIONS[localName].includes(numId)) {
+        // console.log("百鬼活動跳過紀錄 地點",decodeURIComponent(bossName), id, localName);
+        return true;
+    }
+
+    return false;
 }
 
 // 找到【跳到至當前】按鈕
@@ -283,7 +281,7 @@ function findScrollToBottomBTN() {
 
 
 function checkIfDivScrolledToBottom() {
-  if (oldDayTime == "") {
+  if (準備獲取Boss死亡的最早時間 == "") {
     // 找到【跳到至當前】按鈕
     findScrollToBottomBTN();
 
