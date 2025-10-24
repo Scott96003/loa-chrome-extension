@@ -266,28 +266,39 @@ function shouldSkipBoss(localName, id, bossName) {
     return false;
 }
 
-// 找到【跳到至當前】按鈕
-function findScrollToBottomBTN() {
-  // 找到所有按鈕元素
-  const buttons = document.querySelectorAll('button.button__201d5');
+/**
+ * 遍歷頁面上的所有 <button> 元素，找到包含文本「跳到至當前」的按鈕並點擊。
+ * @returns {boolean} 如果找到並點擊了按鈕，返回 true；否則返回 false。
+ */
+function findAndClickButtonByText() {
+    // 獲取頁面上所有的按鈕元素
+    const allButtons = document.querySelectorAll('button');
 
-  // 遍歷所有找到的按鈕
-  for (const button of buttons) {
-      // 檢查按鈕內是否有 div.contents__201d5 且文字內容為「跳到至當前」
-      const div = button.querySelector('div.contents__201d5');
-      if (div && div.textContent.trim() === '跳到至當前') {
-          // 找到目標按鈕，執行點擊
-          button.click();
-          break; // 如果找到後不需要繼續檢查，可以跳出迴圈
-      }
-  }
+    // 使用 Array.find 尋找第一個符合條件的按鈕
+    const targetButton = Array.from(allButtons).find(button => {
+        // 使用 textContent 並去除空白，檢查是否包含目標文字
+        // 注意：這裡使用 includes()，如果只想匹配完全等於「跳到至當前」的按鈕，請改用 ===
+        
+        // 為了確保精確匹配「跳到至當前」，我們仍使用 trim() 和 ===
+        return button.textContent && button.textContent.trim() === '跳到至當前';
+    });
+
+    if (targetButton) {
+        targetButton.click();
+        return true;
+    }
+    
+    return false;
 }
 
 
 function checkIfDivScrolledToBottom() {
   if (準備獲取Boss死亡的最早時間 == "") {
     // 找到【跳到至當前】按鈕
-    findScrollToBottomBTN();
+    if (findAndClickButtonByText()) {
+      console.log('找到按鈕, 已經滾動到最底部');
+      return;
+    }
 
     let bossScroll = document.getElementsByClassName(bossScrollClass)[0]
     // 獲取當前滾動位置
