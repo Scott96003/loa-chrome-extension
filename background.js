@@ -69,6 +69,9 @@ function processNextMessage() {
       let bossTimeTab = tabs.find(tab => tab.title === "LOA-BossTime");
       
       if (bossTimeTab) {
+        if (message == "回到LOA-BossTime") {
+          chrome.tabs.update(bossTimeTab.id, { active: true });
+        }
         // 如果頁面已經存在，則向其發送資料
         chromeSendMessage(bossTimeTab, message);
       } else {

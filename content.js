@@ -1,8 +1,8 @@
 // 清單中的關鍵字
-var keywords = ["LoA363 頭目擊殺記錄 Boss Kills"];
+let keywords = ["LoA363 頭目擊殺記錄 Boss Kills"];
 
-var 準備獲取Boss死亡的最早時間 = "";
-var 當前資料的最後時間 = "2024-06-01 00:00";
+let 準備獲取Boss死亡的最早時間 = "";
+let 當前資料的最後時間 = new Date()
 let bossScrollClass = "scroller__36d07";
 let bossCellDivClass = ".gridContainer__623de";
 let bossCellNameClass = ".embedFieldName__623de";
@@ -73,7 +73,11 @@ async function 取得Boss歷史資料() {
         準備獲取Boss死亡的最早時間 = "";
         checkIfDivScrolledToBottom();
         // **檢查 4：確認結束**
-        console.log("流程結束 (return)。");
+        console.log("流程結束 5 秒後回到Boss清單。");
+
+        await delay(5000);
+        // 將資料傳送到 Background Script
+        chrome.runtime.sendMessage("回到LOA-BossTime");
     }
 }
 
