@@ -327,13 +327,15 @@ function SendToDC(id) {
     // 建立一個 Boss 類型與其對應的 Webhook URL 和 Boss ID 列表的映射
     const bossReportMap = [
         // 檢查是否為長老 Boss
-        { checkList: 長老Boss, webhookUrl: 長老_URL },
+        { checkList: 長老Boss, webhookUrl: WEBHook_URL.長老 },
         // 檢查是否為奧塔 Boss (使用您範例中的 奧塔AllBoss)
-        { checkList: 奧塔AllBoss, webhookUrl: 奧塔_URL }, 
+        { checkList: 奧塔AllBoss, webhookUrl: WEBHook_URL.奧塔 }, 
         // 檢查是否為陣營 Boss
-        { checkList: 陣營Boss, webhookUrl: 陣營_URL },
+        { checkList: 陣營Boss, webhookUrl: WEBHook_URL.陣營 },
         // 檢查是否為野外 Boss
-        { checkList: 野外Boss, webhookUrl: 野外_URL }
+        { checkList: 野外Boss, webhookUrl: WEBHook_URL.野外 },
+        // 檢查是否在全部的 Boss清單
+        { checkList: [...長老Boss, ...陣營Boss, ...奧塔Boss, ...野外Boss], webhookUrl: WEBHook_URL.all }
     ];
 
     // 只有在 Boss ID 在監控列表或為時間刷新 (fixId == 0) 時才執行
@@ -352,8 +354,7 @@ function SendToDC(id) {
         titleMsg += "*** 重生輪迴時間刷新 ***\n";
 
         // 遍歷映射，找出所有匹配的類別並發送報告
-        bossReportMap.forEach(({ checkList, webhookUrl }) => {
-            // 檢查並發送長老 Boss 的輪迴時間報告到 Elder_Report_URL
+        bossReportMap.forEach(({ checkList, webhookUrl }) => {            
             let bosses = bossListData.filter(item => checkList.includes(parseInt(item.id)));
             bosses = bosses.sort((a, b) => 
               Math.abs(parseInt(a.重生間隔.split('~')[0]) - config.lastRefreshBossTime) - 

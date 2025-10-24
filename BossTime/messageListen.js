@@ -138,9 +138,8 @@ function addMessage(bossData) {
     drawMessage(message);
     showfloatingMessage(message);
 
-    if (WEBHOOK_URL.length > 0) {
-      setTimeout(() => {
-          SendToDC(parseInt(bossData.id));
-      }, 2000);
-    }
+
+    setTimeout(() => {
+        SendToDC(parseInt(bossData.id));
+    }, 1000);
 }
