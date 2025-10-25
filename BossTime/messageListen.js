@@ -8,12 +8,17 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         return;
     }
     
-    // 在這裡處理接收到的消息
-    var bossData = message;
-    bossData.bossName = decodeURIComponent(message.bossName);
-    bossData.emblem = decodeURIComponent(message.emblem);
-    console.log(sender.tab, " Boss死亡資訊:", bossData);
-    updateBossData(bossData);
+    if (typeof message === 'object') {
+      // 在這裡處理接收到的消息
+      var bossData = message;
+      bossData.bossName = decodeURIComponent(message.bossName);
+      bossData.emblem = decodeURIComponent(message.emblem);
+      console.log(sender.tab, " Boss死亡資訊:", bossData);
+      updateBossData(bossData);
+      // 透過websocket 同步
+      sendDeathInfoA(bossData);
+    }
+
 });
 // 監聽來自 Background Script 的消息 (Step2)
 function updateBossData(bossData) {
