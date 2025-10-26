@@ -1,15 +1,16 @@
 // 全域變數：定義原始預設配置
 const defaultColumnConfig = [
-  { key: 'id', header: 'ID', type: 'data', editable: false, style: { textAlign: 'center' } },
+
   { key: 'bossName', header: '頭目名稱', type: 'data', editable: true },
-  { key: 'respawnTime', header: '間隔(h)', type: 'data', editable: false, style: { textAlign: 'center' } },
+  { key: 'respawnCount', header: '剩餘數目', type: 'computed', editable: false, cellId: 'respawn-count' },
   { key: 'death', header: '死亡時間', type: 'data', editable: true, format: 'tooltip' },
-  { key: '重生間隔', header: '預估出生時間', type: 'computed', editable: false, cellId: 'respawn-range' },
-  { key: 'respawnCount', header: '可能重生次數', type: 'computed', editable: false, cellId: 'respawn-count' },
-  { key: '已死亡', header: '距離上次死亡/機率', type: 'computed', editable: false, style: { textAlign: 'center' }, cellId: 'time-gap' },
   { key: 'emblem', header: '擊殺血盟', type: 'data', editable: true },
-  { key: 'action', header: '操作', type: 'action' }, // 刪除按鈕
-  { key: '活動機率', header: '活動機率', type: 'computed', cellId: 'active-rate'  }
+  { key: '重生間隔', header: '預估出生時間', type: 'computed', editable: false, cellId: 'respawn-range' },
+  { key: '已死亡', header: '距離上次死亡/機率', type: 'computed', editable: false, style: { textAlign: 'center' }, cellId: 'time-gap' },
+  { key: 'respawnTime', header: '間隔(h)', type: 'data', editable: false, style: { textAlign: 'center' } },
+  { key: 'id', header: 'ID', type: 'data', editable: false, style: { textAlign: 'center' } },
+  { key: '活動機率', header: '活動機率', type: 'computed', cellId: 'active-rate'  },
+  { key: 'action', header: '操作', type: 'action' } // 刪除按鈕
 ];
 
 // 全域變數：用於儲存當前使用的配置
