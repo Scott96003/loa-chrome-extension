@@ -30,6 +30,7 @@ class ReconnectWebSocket {
                 clearTimeout(this.timeoutId);
                 this.timeoutId = null;
             }
+            send_Sync_Boss_Data();
         };
 
         this.ws.onmessage = (event) => {
@@ -84,46 +85,47 @@ const wsB = new ReconnectWebSocket(WS_URL, handleBMessage, 'B');
 function handleBMessage(event) {
     try {
         const received = JSON.parse(event.data);
-        console.log(received)
+        console.log("收到", WS_URL, "訊息", received)
         const type = received.type;
-        
 
-        
         switch (type) {
-            case 'data_sync':
-                const sync_payload = received.payload;
+            case 'Sync_Boss_Data':
                 // 處理資料同步邏輯
-                console.log('data_sync 正在處理數據同步...');
-                bossListData = sync_payload.custom_data.bossListData; 
-            case 'data_update': // 正確: 直接比較 type 的值是否為 'data_sync'
-                const payload = received.payload;
-                // 處理資料同步邏輯
-                console.log('data_update 正在處理數據同步...');
-                bossListData = payload.custom_data.bossListData; 
-                
+                console.log('正在處理 Sync_Boss_Data 數據同步...');
+                bossListData = received.bossListData;
+                config.messageList = received.config.messageList;
+                config.rebootTime = new Date(received.config.rebootTime);                
+                reDrawBossList();
+                reDrawMessage();
+                refresh();
+                console.log('正在處理 Sync_Boss_Data 數據同步...', "完成");
                 break;
-            case 'chat_message': // 正確: 處理聊天訊息\
-                const deathInfo = JSON.parse(received.content);
+            case 'Boss_Death': // 正確: 處理聊天訊息\
                 // 處理聊天訊息邏輯
-                console.log('正在處理聊天訊息...', deathInfo);
-                
-                updateBossData(deathInfo);
-                
-                
+                console.log('正在處理Boss_Death訊息...', received.deathInfo);                
+                updateBossData(received.deathInfo);
                 break;
-
+            case 'Ack_Sync':
+                break;
             default:
                 console.log('收到未知訊息類型:', type);
                 break;
         }
-        const title = (type === 'data_update') ? '🎉 數據已同步！' : '🔄 數據即時更新！';
-        console.log(title)
     } catch (e) {
-        console.error("接收數據錯誤:", e);
+        console.error("接收數據錯誤:", e, event);
     }
 }
 
-function updateDisplay(title, data) {
-    const jsonString = JSON.stringify(data, null, 2);
-    jsonDisplay.innerHTML = `<h3>${title}</h3><pre>${jsonString}</pre>`;
+// 傳送主 JSON 數據更新
+function send_Sync_Boss_Data() {
+    const message = {
+        type: 'Ack_Sync'
+    };
+    if (wsB.readyState === WebSocket.OPEN) {
+        wsB.send(JSON.stringify(message));
+        console.log("[B 發送] 同步請求");
+    }
 }
+
+
+startClient('spoke');

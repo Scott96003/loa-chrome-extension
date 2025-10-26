@@ -15,8 +15,9 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       bossData.emblem = decodeURIComponent(message.emblem);
       console.log(sender.tab, " Boss死亡資訊:", bossData);
       updateBossData(bossData);
-      // 透過websocket 同步
-      sendDeathInfoA(bossData);
+      
+      // 透過 webRTC 同步
+      send_Boss_Death(bossData);
     }
 
 });

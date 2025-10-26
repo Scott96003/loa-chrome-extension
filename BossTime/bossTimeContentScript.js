@@ -970,22 +970,38 @@ function filterTable(bossIDs) {
 }
 
 setInterval(() => {
-  checkDC的Boss頁面是否有開啟();
+  if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+    checkDC的Boss頁面是否有開啟();
+  }
 }, 5000);
 
 function checkDC的Boss頁面是否有開啟() {
-  chrome.tabs.query({ url: 'https://discord.com/channels/1124664207921655830/1186526426770444329' }, (tabs) => {
-    if (tabs.length === 0) {
-        console.log("找不到符合條件的標籤頁，開啟一個新分頁並跳轉...");
-        chrome.tabs.create({url: 'https://discord.com/channels/1124664207921655830/1186526426770444329', active: true}, function(tab) {
-            console.log("新分頁已開啟並跳轉", tab);
-        });
-    }
-  });
+  // 檢查 chrome.runtime 是否存在，並且 onMessage 屬性是否可存取
+  if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+      // 只有在確認存在時才執行註冊監聽器的操作
+    chrome.tabs.query({ url: 'https://discord.com/channels/1124664207921655830/1186526426770444329' }, (tabs) => {
+      if (tabs.length === 0) {
+          console.log("找不到符合條件的標籤頁，開啟一個新分頁並跳轉...");
+          chrome.tabs.create({url: 'https://discord.com/channels/1124664207921655830/1186526426770444329', active: true}, function(tab) {
+              console.log("新分頁已開啟並跳轉", tab);
+          });
+      }
+    });
+  } else {
+      // 這裡可以選擇性地加入一些錯誤記錄，說明 API 不可用
+      console.error("錯誤：chrome.tabs.query 在此環境中不可用。");
+  }
 }
 
 function 取得Boss歷史資料(myDayTime) {
-  
+  // 檢查 chrome.runtime 是否存在，並且 onMessage 屬性是否可存取
+  if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+      // 只有在確認存在時才執行註冊監聽器的操作
+  } else {
+      // 這裡可以選擇性地加入一些錯誤記錄，說明 API 不可用
+      console.error("錯誤：chrome.tabs.query 在此環境中不可用。");
+      return;
+  }  
   chrome.tabs.query({ url: 'https://discord.com/channels/1124664207921655830/1186526426770444329' }, (tabs) => {
     tabs.forEach((tab) => {
      
