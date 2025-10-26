@@ -6,7 +6,7 @@ const defaultColumnConfig = [
   { key: 'death', header: '死亡時間', type: 'data', editable: true, format: 'tooltip' },
   { key: '重生間隔', header: '預估出生時間', type: 'computed', editable: false, cellId: 'respawn-range' },
   { key: 'respawnCount', header: '可能重生次數', type: 'computed', editable: false, cellId: 'respawn-count' },
-  { key: '已死亡', header: '距離上次死亡/機率', type: 'computed', editable: false, cellId: 'time-gap' },
+  { key: '已死亡', header: '距離上次死亡/機率', type: 'computed', editable: false, style: { textAlign: 'center' }, cellId: 'time-gap' },
   { key: 'emblem', header: '擊殺血盟', type: 'data', editable: true },
   { key: 'action', header: '操作', type: 'action' }, // 刪除按鈕
   { key: '活動機率', header: '活動機率', type: 'computed', cellId: 'active-rate'  }

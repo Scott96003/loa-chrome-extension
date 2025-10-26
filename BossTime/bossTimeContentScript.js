@@ -520,23 +520,6 @@ function updateBossRemainingTime(bossID = 0) {
         }
       }
     }
-
-
-    // 計算如果死亡時間超過間隔, 開始閃爍
-    if (bossData.已死亡 > 0) {
-        let respawnTimeInSeconds = bossData.respawnTime * 3600 * 1000; // 將 respawnTime 轉換為秒
-        
-        if (bossData.已死亡 > respawnTimeInSeconds) {
-            // 加入閃爍效果
-            row.cells[7].classList.add('blinking');
-        } else {
-            // 移除閃爍效果          
-            row.cells[7].classList.remove('blinking');
-        }
-    } else {
-        // 處理無效時間格式的情況，例如移除閃爍效果
-        row.cells[7].classList.remove('blinking');
-    }
   });
 
   // 如果數量有變動, 就要重新排列
