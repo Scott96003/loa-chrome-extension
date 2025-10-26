@@ -115,4 +115,9 @@ window.onload = function() {
     console.log("window onload");
     loadFromLocalStorage();
     setInterval(updateBossRemainingTime, 60*1000); // 每秒更新剩余时间
+    
+    setInterval(() => {
+        document.getElementById("webrtc_div").innerHTML = getFormattedStatusHtml();
+    }, 5000);
+    
 };

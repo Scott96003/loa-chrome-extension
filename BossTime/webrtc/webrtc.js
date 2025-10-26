@@ -726,14 +726,18 @@ function getStatusBadgeHtml(statusText) {
 
 
 function getFormattedStatusHtml() {
+    // 基礎字體設定為 14px
+    const baseFontSize = '12px';
+    const smallFontSize = '10px';
+
     if (!webrtcClient) {
-        return '<div style="color: red; font-weight: bold; border: 1px solid #f44336; padding: 10px; border-radius: 5px; background-color: #ffebee; font-family: Arial, sans-serif;">客戶端尚未啟動 (webrtcClient 為 null)。請先呼叫 startClient(\'hub\') 或 startClient(\'spoke\')。</div>';
+        return `<div style="color: red; font-weight: bold; border: 1px solid #f44336; padding: 5px; border-radius: 5px; background-color: #ffebee; font-family: Arial, sans-serif; font-size: ${baseFontSize};">客戶端尚未啟動 (webrtcClient 為 null)。請先呼叫 startClient('hub') 或 startClient('spoke')。</div>`;
     }
 
     // 1. WebSocket 狀態
     const wsStatus = webrtcClient.getWsStatus();
     const wsHtml = `
-        <div style="margin-bottom: 15px;">
+        <div style="margin-bottom: 5px; font-size: ${baseFontSize};"> 
             <strong style="color: #333;">WebSocket 信令狀態: </strong> ${getStatusBadgeHtml(wsStatus)}
         </div>
     `;
@@ -744,31 +748,32 @@ function getFormattedStatusHtml() {
 
     let tableRows = '';
     if (p2pDetails.length === 0) {
-        tableRows = '<tr><td colspan="3" style="text-align: center; padding: 10px; color: #777;">尚無 PeerConnection 存在</td></tr>';
+        // 內邊距減少到 3px
+        tableRows = `<tr><td colspan="3" style="text-align: center; padding: 3px; color: #478276ff; font-size: ${smallFontSize};">尚無 PeerConnection 存在</td></tr>`;
     } else {
         p2pDetails.forEach(peer => {
             tableRows += `
                 <tr>
-                    <td style="padding: 8px; border-bottom: 1px solid #eee; font-family: monospace;">${peer.id}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #eee;">${getStatusBadgeHtml(peer.ice)}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #eee;">${getStatusBadgeHtml(peer.dataChannel)}</td>
+                    <td style="padding: 3px; border-bottom: 1px solid #eee; font-family: monospace; font-size: ${smallFontSize};">${peer.id}</td>
+                    <td style="padding: 3px; border-bottom: 1px solid #eee; font-size: ${smallFontSize};">${getStatusBadgeHtml(peer.ice)}</td>
+                    <td style="padding: 3px; border-bottom: 1px solid #eee; font-size: ${smallFontSize};">${getStatusBadgeHtml(peer.dataChannel)}</td>
                 </tr>
             `;
         });
     }
 
     const p2pHtml = `
-        <div style="margin-bottom: 15px;">
+        <div style="margin-bottom: 5px; font-size: ${baseFontSize};"> 
             <strong style="color: #333;">活躍 P2P 連線數量: </strong> <span style="font-weight: bold; color: ${p2pCount > 0 ? '#4CAF50' : '#f44336'};">${p2pCount}</span>
         </div>
         <div>
-            <strong style="color: #333;">詳細 P2P 連線列表:</strong>
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 5px;">
+            <strong style="color: #333; font-size: ${baseFontSize};">詳細 P2P 連線列表:</strong>
+            <table style="width: 100%; border-collapse: collapse; font-size: ${smallFontSize}; margin-top: 3px; color: #6e59bbff"> 
                 <thead>
                     <tr style="background-color: #e0e0e0;">
-                        <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ccc;">Peer ID</th>
-                        <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ccc;">ICE State</th>
-                        <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ccc;">DataChannel State</th>
+                        <th style="padding: 3px; text-align: left; border-bottom: 2px solid #ccccccff;">Peer ID</th>
+                        <th style="padding: 3px; text-align: left; border-bottom: 2px solid #ccc;">ICE State</th>
+                        <th style="padding: 3px; text-align: left; border-bottom: 2px solid #ccc;">DataChannel State</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -780,8 +785,8 @@ function getFormattedStatusHtml() {
 
     // 總結容器
     return `
-        <div style="border: 1px solid #ccc; padding: 15px; border-radius: 5px; background-color: #f9f9f9; font-family: Arial, sans-serif;">
-            <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 5px; color: #007bff;">客戶端 ID: ${webrtcClient.clientId} (${webrtcClient.role.toUpperCase()})</h3>
+        <div style="border: 1px solid #ccc; padding: 5px; border-radius: 5px; background-color: #f9f9f9; font-family: Arial, sans-serif; font-size: ${baseFontSize};"> 
+            <h3 style="margin-top: 0; margin-bottom: 5px; border-bottom: 1px solid #ddd; padding-bottom: 3px; color: #007bff; font-size: 15px;">客戶端 ID: ${webrtcClient.clientId} (${webrtcClient.role.toUpperCase()})</h3>
             ${wsHtml}
             ${p2pHtml}
         </div>
