@@ -65,8 +65,11 @@ function processNextMessage() {
 
     // 檢查是否已經存在 "bossTime.html" 頁面
     chrome.tabs.query({}, function(tabs) {
-      // 建議使用更精準的匹配，如頁面 URL 的子字串
-      let bossTimeTab = tabs.find(tab => tab.title === "LOA-BossTime");
+      const searchPath = "bosstime/bosstime.html"; // 搜尋路徑的標準形式（通常使用小寫）
+
+      let bossTimeTab = tabs.find(tab => 
+        tab.url && tab.url.toLowerCase().includes(searchPath.toLowerCase())
+      );
       
       if (bossTimeTab) {
         if (message == "回到LOA-BossTime") {

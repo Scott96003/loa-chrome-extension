@@ -36,3 +36,12 @@ function webRTC_handleMessage(peerId, received) {
         console.error("接收數據錯誤:", e, event);
     }
 }
+
+WEBHook_URL = {
+    all: "",
+    長老: "",
+    奧塔: "",
+    陣營: "",
+    野外: "",
+    龍門: "",
+}
