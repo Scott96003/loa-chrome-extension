@@ -28,6 +28,20 @@ document.addEventListener("DOMContentLoaded", function() {
           settingContainer.style.display = 'none';
       }
     });
+
+    document.getElementById('auto_speech_btn').addEventListener('click', function() {
+        var synth = window.speechSynthesis;
+            
+            // **建議加上檢查：如果正在朗讀，先停止**
+            if (synth.speaking) {
+                synth.cancel();
+            }
+        var utterance = new SpeechSynthesisUtterance("開始自動播報");
+        // **新增：明確設定語言**
+        utterance.lang = 'zh-TW'; // 或 'zh-CN'，取決於您需要的中文口音
+        utterance.volume = 1.0
+        synth.speak(utterance);
+    });
    
 
   // 添加事件监听器

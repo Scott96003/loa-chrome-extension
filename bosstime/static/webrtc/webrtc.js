@@ -208,6 +208,27 @@ const WebRTCClientModule = (function() {
             
             if (signal.senderId === this.clientId) return;
             
+            // =======================================================
+            // 💥 新增檢查：過濾掉來自 'server' 的信令訊息
+            // =======================================================
+            const peerId = signal.senderId;
+            if (peerId === 'server') {
+                 // 這裡可以處理服務器發來的特殊 PONG 或其他指令，但不能是 WebRTC 信令
+                 // 由於您的伺服器邏輯未知，最安全的做法是直接忽略 WebRTC 相關的信令
+                 
+                 // 如果這個 'server' ID 發送的是 PONG，則這裡可能需要處理它。
+                 // 但為了避免創建 PeerConnection，我們只在這裡處理非 P2P 相關的信號。
+                 if (signal.type === 'pong') {
+                     // console.log("Received PONG from server.");
+                     return; 
+                 }
+                 
+                 // 忽略所有其他來自 'server' 的 WebRTC 信令
+                 console.warn(`[信令] 忽略來自 'server' 的 P2P 信號: ${signal.type}`);
+                 return;
+            }
+            // =======================================================
+
             if (signal.type === 'user_joined') {
                 const newUserId = signal.newUserId;
                 
@@ -242,7 +263,6 @@ const WebRTCClientModule = (function() {
                 return;
             }
 
-            const peerId = signal.senderId;
             const pc = this._getOrCreatePeerConnection(peerId, false);
             
             switch (signal.type) {
