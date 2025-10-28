@@ -14,7 +14,7 @@
   "default_title": "天堂Boss提醒"
 },
 "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://discord.com https://*.xn--ihqt9a492c9lev96b.online wss://*.xn--ihqt9a492c9lev96b.online;"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://discord.com https://*.xn--ihqt9a492c9lev96b.online:8443 wss://*.xn--ihqt9a492c9lev96b.online:8443;"
 },
 "background": {
     "service_worker": "background.js"
