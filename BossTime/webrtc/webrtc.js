@@ -326,7 +326,15 @@ const WebRTCClientModule = (function() {
                     this._disconnectTimers.delete(id);
                 }
 
-                // 2. 🎯 新增：處理 disconnected 狀態 (啟動超時清理)
+                // 2. 處理 failed 或 closed 狀態 (立即清理)
+                if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'closed') {
+                    // ⚠️ 確保這裡沒有任何延遲
+                    this._cleanupPeerConnection(id, pc.iceConnectionState);
+                    // 確保函數在清理後結束，避免後續邏輯干擾
+                    return; 
+                
+                }
+                // 3. 🎯 新增：處理 disconnected 狀態 (啟動超時清理)
                 if (pc.iceConnectionState === 'disconnected') {
                     console.warn(`[${id}] ICE Disconnected，啟動 5 秒超時清理計時器...`);
                     // 5 秒後若未恢復，則視為失敗並清理
@@ -334,11 +342,6 @@ const WebRTCClientModule = (function() {
                         this._cleanupPeerConnection(id, 'ICE Disconnect Timeout');
                     }, 5000); 
                     this._disconnectTimers.set(id, timer);
-                }
-                
-                // 3. 處理 failed 或 closed 狀態 (立即清理)
-                if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'closed') {
-                    this._cleanupPeerConnection(id, pc.iceConnectionState);
                 }
             };
             
@@ -472,6 +475,10 @@ const WebRTCClientModule = (function() {
             }
             channel.onerror = (error) => {
                 this.ui.appendMessage(`[P2P 中斷/錯誤] 與 [${id}] 的數據通道錯誤: ${error ? error.message : '未知錯誤'}`);
+                // ⚠️ 新增：強制關閉 DataChannel
+                if (channel.readyState !== 'closed') {
+                    channel.close();
+                }
             }
         }
         
