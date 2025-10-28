@@ -1,5 +1,5 @@
 // const WebRTC_WS_URL = 'wss://loa-boss-ws-server.onrender.com/ws';
-const WebRTC_WS_URL = 'ws://loabosstime.tplinkdns.com:8000/ws';
+const WebRTC_WS_URL = 'wss://loabosstime.有毒不要來.online//ws';
 const HUB_FIXED_ID = 'HUB_A_FIXED_ID';
         
 let MY_ROLE = null;
