@@ -14,7 +14,7 @@
   "default_title": "天堂Boss提醒"
 },
 "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.xn--ihqt9a492c9lev96b.online wss://*.xn--ihqt9a492c9lev96b.online;"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://discord.com https://*.xn--ihqt9a492c9lev96b.online wss://*.xn--ihqt9a492c9lev96b.online;"
 },
 "background": {
     "service_worker": "background.js"
@@ -42,12 +42,12 @@
         ]
     },
     {
-      "matches" : [ "*://*/bossTime/bossTime.html" ],
+      "matches" : [ "*://*/bossTime/templates/bossTime.html" ],
       "run_at": "document_idle",
       "js" : 
         [ 
           "js/jquery-3.7.1.min.js",
-          "bossTime/bossTimeContentScript.js"
+          "bossTime/static/bossTimeContentScript.js"
         ]
     }
   ]
