@@ -1,7 +1,7 @@
 // const WebRTC_WS_URL = 'wss://loa-boss-ws-server.onrender.com/ws';
 // 必須使用 Punycode 格式
 // const WebRTC_WS_URL = "wss://loabosstime.xn--ihqt9a492c9lev96b.online/ws";
-const WebRTC_WS_URL = "wss://loabosstime.有毒不要來.online/ws";
+const WebRTC_WS_URL = "wss://loabosstime.有毒不要來.online:8443/ws";
 const HUB_FIXED_ID = 'HUB_A_FIXED_ID';
         
 let MY_ROLE = null;
