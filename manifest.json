@@ -14,7 +14,7 @@
   "default_title": "天堂Boss提醒"
 },
 "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://loabosstime.xn--ihqt9a492c9lev96b.online wss://loabosstime.xn--ihqt9a492c9lev96b.online;"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.xn--ihqt9a492c9lev96b.online wss://*.xn--ihqt9a492c9lev96b.online;"
 },
 "background": {
     "service_worker": "background.js"
@@ -27,8 +27,8 @@
   "storage"
 ],
 "host_permissions": [
-  "https://loabosstime.xn--ihqt9a492c9lev96b.online/*",
-  "wss://loabosstime.xn--ihqt9a492c9lev96b.online/*"
+  "https://*.xn--ihqt9a492c9lev96b.online/*",
+  "wss://*.xn--ihqt9a492c9lev96b.online/*"
 ],
 "content_scripts" : 
   [
