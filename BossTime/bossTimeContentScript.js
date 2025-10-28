@@ -818,7 +818,7 @@ function showTooltip(event, data) {
       segment.deathList.forEach(function(deathTime) {
         if (needReboot == true) {
           if (new Date(deathTime.death) < config.rebootTime) {
-            msg += "<div style='color: yellow;'>重新開機" +rebootTime+"</div>";
+            msg += "<div style='color: yellow;'>重新開機" + config.rebootTime+ "</div>";
             needReboot = false
           }
         }
