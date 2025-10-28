@@ -16,6 +16,18 @@ document.addEventListener("DOMContentLoaded", function() {
           messageContainer.style.display = 'none';
       }
     });
+
+
+    settingContainer = document.getElementById('setting_div');
+    toggleSettingContainerBtn = document.getElementById('toggleSettingContainer');
+
+    toggleSettingContainerBtn .addEventListener('click', function() {
+      if (settingContainer.style.display === 'none' || settingContainer.style.display === '') {
+          settingContainer.style.display = 'block';
+      } else {
+          settingContainer.style.display = 'none';
+      }
+    });
    
 
   // 添加事件监听器

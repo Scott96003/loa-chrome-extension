@@ -65,12 +65,12 @@ function processNextMessage() {
 
     // 檢查是否已經存在 "bossTime.html" 頁面
     chrome.tabs.query({}, function(tabs) {
-      const searchPath = "bosstime/bosstime.html"; // 搜尋路徑的標準形式（通常使用小寫）
+      const searchPath = "bosstime/templates/bosstime.html"; // 搜尋路徑的標準形式（通常使用小寫）
 
       let bossTimeTab = tabs.find(tab => 
         tab.url && tab.url.toLowerCase().includes(searchPath.toLowerCase())
       );
-      
+
       if (bossTimeTab) {
         if (message == "回到LOA-BossTime") {
           chrome.tabs.update(bossTimeTab.id, { active: true });
@@ -103,7 +103,7 @@ function processNextMessage() {
 // **修正 3：確保函數接收 message 參數**
 function createBossTimePage(message) {
   chrome.tabs.create({
-      url: "bossTime/bossTime.html",
+      url: "bossTime/templates/bosstime.html",
       active: true,
   }, function(tab) {
     console.log("New tab created with ID:", tab.id);

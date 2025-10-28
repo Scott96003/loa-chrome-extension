@@ -193,7 +193,7 @@
 
         #dragonGateStatusDisplay {
             white-space: pre-wrap; /* 確保換行符 (\n) 能被正確顯示 */
-            font-size: 14px;
+            font-size: 12px;
         }
         .flex-container {
             display: flex; /* 啟用 Flexbox 佈局 */
@@ -214,19 +214,19 @@
         }
 
     </style>
-    <script type = "text/javascript" src = "config.js"></script>
-    <script type = "text/javascript" src = "init.js"></script>
-    <script type = "text/javascript" src = "save.js"></script>
-    <script type = "text/javascript" src = "db.js"></script>
-    <script type = "text/javascript" src = "tablefunc.js"></script>
-    <script type = "text/javascript" src = "bossList.js"></script>
-    <script type = "text/javascript" src = "bossTimeContentScript.js"></script>
-    <script type = "text/javascript" src = "messageListen.js"></script>
-    <script type = "text/javascript" src = "sendMessageToDiscord.js"></script>
-    <script type = "text/javascript" src = "onloading.js"></script>
-    <script type = "text/javascript" src = "dragonGate.js"></script>
-    <script type = "text/javascript" src = "webrtc/webrtc.js"></script>
-    <script type = "text/javascript" src = "webrtc/webrtc_client.js"></script>
+    <script type="text/javascript" src = "../static/config.js"></script>
+    <script type="text/javascript" src = "../static/init.js"></script>
+    <script type="text/javascript" src = "../static/save.js"></script>
+    <script type="text/javascript" src = "../static/db.js"></script>
+    <script type="text/javascript" src = "../static/tablefunc.js"></script>
+    <script type="text/javascript" src = "../static/bossList.js"></script>
+    <script type="text/javascript" src = "../static/bossTimeContentScript.js"></script>
+    <script type="text/javascript" src = "../static/messageListen.js"></script>
+    <script type="text/javascript" src = "../static/sendMessageToDiscord.js"></script>
+    <script type="text/javascript" src = "../static/onloading.js"></script>
+    <script type="text/javascript" src = "../static/dragonGate.js"></script>
+    <script type="text/javascript" src = "../static/webrtc/webrtc.js"></script>
+    <script type="text/javascript" src = "../static/webrtc/webrtc_server.js"></script>
 </head>
 <body>
     <div class="flex-container">
@@ -251,7 +251,7 @@
         </div>
 
         <div id="dragonGateStatusContainer" style="width: 300px;margin-left: 30px; padding: 5px; border: 2px solid #5e47a9; border-radius: 8px;text-align: center;">
-            <h4 style="margin-top: 0; color: #a980ff;">龍門狀態追蹤</h4>
+            <h3 style="margin-top: 0; color: #a980ff;">龍門狀態追蹤</h3>
             <div id="dragonGateStatusDisplay"></div>
         </div>
         <div id="webrtc_div">
@@ -278,7 +278,7 @@
     <div class="message-container" id="messageContainer" style="display:block;"></div>
     <div id="setting_container">
         <button id="toggleMessageContainer">顯示訊息</button><br>
-        <button onclick="document.getElementById('setting_div').toggleAttribute('hidden');">設定</button><br>
+        <button id="toggleSettingContainer">設定</button><br>
         <div>
             <span>音量大小:</span><span id="percentageDisplay">50%</span><br>
             <input type="range" id="percentageSlider" min="0" max="100" step="1" value="50">            

@@ -1,6 +1,9 @@
+
 import asyncio
 import json
 import logging
+# 在檔案頂部確保導入 pathlib
+from pathlib import Path
 from typing import Dict, List
 from datetime import datetime
 
@@ -148,14 +151,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 配置靜態檔案目錄 (用於 CSS/JS/圖片)
-# 讓所有 /static/... 的請求都能訪問 static/ 資料夾內的檔案
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# 1. 取得當前 Python 檔案所在的目錄 (例如：.../Loa_Boss_Ws_Server/)
+current_file_dir = Path(__file__).parent 
 
-# 配置模板引擎
-# Jinja2Templates 會在 templates/ 資料夾中查找 HTML 檔案
-templates = Jinja2Templates(directory="templates")
+# 假設 'bosstime' 資料夾與 'Loa_Boss_Ws_Server' 資料夾在同一層級
+# 因此，只需要向上跳一層到達共同的父目錄 (例如：.../Loa_Boss_Time_Project)
+project_root_dir = current_file_dir.parent.parent
 
+# 2. 配置模板引擎 (Jinja2)
+# 模板應在: .../Loa_Boss_Time_Project/bosstime/templates
+template_dir = project_root_dir / "bosstime" / "templates" # 注意：您的資料夾名是 bosstime (小寫)
+templates = Jinja2Templates(directory=template_dir)
+
+
+# 3. 配置靜態檔案 (StaticFiles)
+# 靜態檔案應在: .../Loa_Boss_Time_Project/bosstime/static
+static_dir = project_root_dir / "bosstime" / "static" # 注意：您的資料夾名是 bosstime (小寫)
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+logger.info(f"模板目錄設定為: {template_dir}")
+logger.info(f"靜態目錄設定為: {static_dir}")
 
 # ----------------------------------------------
 # 4. 網站首頁路由 (Home Page Route)
@@ -164,11 +179,10 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/", summary="WebRTC Client Home Page")
 async def get_homepage(request: Request):
     """
-    渲染 Loa_Boss_Time.html 作為網站的首頁。
+    渲染 loa_boss_time.html 作為網站的首頁。
     """
-    # 渲染 templates/Loa_Boss_Time.html
-    return templates.TemplateResponse("Loa_Boss_Time.html", {"request": request})
-
+    # 渲染 loa_boss_time.html (注意大小寫，應與檔案名一致)
+    return templates.TemplateResponse("loa_boss_time.html", {"request": request})
 
 # ----------------------------------------------
 # 5. WebSocket 路由 (保持不變)
