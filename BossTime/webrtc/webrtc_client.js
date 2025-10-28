@@ -37,11 +37,6 @@ function webRTC_handleMessage(peerId, received) {
     }
 }
 
-WEBHook_URL = {
-    all: "",
-    長老: "",
-    奧塔: "",
-    陣營: "",
-    野外: "",
-    龍門: "",
+for (const [key, value] of Object.entries(WEBHook_URL)) {
+    WEBHook_URL[key] = ""
 }

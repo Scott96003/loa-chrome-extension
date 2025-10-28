@@ -1,4 +1,5 @@
-const WebRTC_WS_URL = 'wss://loa-boss-ws-server.onrender.com/ws';
+// const WebRTC_WS_URL = 'wss://loa-boss-ws-server.onrender.com/ws';
+const WebRTC_WS_URL = 'ws://loabosstime.tplinkdns.com:8000/ws';
 const HUB_FIXED_ID = 'HUB_A_FIXED_ID';
         
 let MY_ROLE = null;
@@ -55,7 +56,10 @@ const WebRTCClientModule = (function() {
             this.chunkBuffers = new Map(); 
             
             // 🎯 新增：用於管理 disconnected 狀態的超時計時器
-            this._disconnectTimers = new Map(); 
+            this._disconnectTimers = new Map();
+            // 在 WebRTCClient 類別的 constructor 中新增：
+            this.heartbeatInterval = null;
+            this.HEARTBEAT_TIMEOUT = 25000; // 25 秒發送一次 PING
         }
 
         // -----------------------------------------------------------------
@@ -130,13 +134,16 @@ const WebRTCClientModule = (function() {
                 if (this.role === 'hub') {
                     this.connectAllOnlineUsers();
                 }
+                // 啟動心跳
+                this._startHeartbeat();
             };
 
             this.ws.onmessage = (event) => this._handleWebSocketMessage(event);
 
             this.ws.onclose = () => {
                 this.ui.updateWsStatus('disconnected');
-                this.ui.appendMessage("WebSocket 連線已關閉。");
+                this.ui.appendMessage("WebSocket 連線已關閉。");                
+                this._stopHeartbeat(); // 停止心跳
                 this._scheduleReconnect();
             };
             
@@ -146,7 +153,28 @@ const WebRTCClientModule = (function() {
                 this.ws.close();
             };
         }
-        
+
+        // 新增心跳函數
+        _startHeartbeat() {
+            this._stopHeartbeat(); // 確保只運行一個計時器
+            this.heartbeatInterval = setInterval(() => {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    const pingMessage = JSON.stringify({
+                        type: 'ping',
+                        senderId: this.clientId
+                    });
+                    this.ws.send(pingMessage);
+                    // console.log("Sent PING to server.");
+                }
+            }, this.HEARTBEAT_TIMEOUT);
+        }
+
+        _stopHeartbeat() {
+            if (this.heartbeatInterval) {
+                clearInterval(this.heartbeatInterval);
+                this.heartbeatInterval = null;
+            }
+        }        
         _scheduleReconnect() {
             if (!this.ws || this.ws.readyState !== WebSocket.CLOSED) {
                 return;
