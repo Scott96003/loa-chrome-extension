@@ -32,7 +32,7 @@ function send_Sync_Boss_Data(peerId) {
         gateOpenTime: tracker.gateOpenTime,
         gateCloseTime: tracker.gateCloseTime
     };
-    webrtcClient.sendChatMessage(message, peerId);
+    webrtcClient.sendWebRTCChatMessage(message, peerId);
 }
 
 
@@ -42,5 +42,5 @@ function send_Boss_Death(deathInfo) {
         type: 'Boss_Death',
         deathInfo: deathInfo
     };
-    webrtcClient.sendChatMessage(message);
+    webrtcClient.sendWebRTCChatMessage(message);
 }
