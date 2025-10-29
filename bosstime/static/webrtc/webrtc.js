@@ -238,7 +238,8 @@ const WebRTCClientModule = (function() {
                                 (this.dataChannels.get(targetId).readyState === 'open' || 
                                     this.dataChannels.get(targetId).readyState === 'connecting');
                                 
-                            if (targetId !== this.clientId && !isConnectingOrOpen) {
+
+                            if (targetId.includes("SPK_") && targetId !== this.clientId && !isConnectingOrOpen) {
                                 console.log(`[HUB] 為目標 ${targetId} 自動發送 Offer...`);
                                 await this.sendSdpOffer(targetId); 
                             }
