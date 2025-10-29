@@ -2,7 +2,7 @@ startClient('hub');
 
 function webRTC_handleMessage(peerId, received) {
     try {
-        console.log("收到 WebRTC 訊息", received)
+        console.log("[WEBRTC] 收到 WebRTC 訊息", received)
         const type = received.type;
         
         switch (type) {
@@ -13,12 +13,14 @@ function webRTC_handleMessage(peerId, received) {
                 break;
             case 'Boss_Death':
                 break;
+            case 'ping':
+                console.log("[WEBRTC] 收到心跳包");
             default:
-                console.log('收到未知訊息類型:', type);
+                console.log('[WEBRTC] 收到未知訊息類型:', type);
                 break;
         }
     } catch (e) {
-        console.error("接收數據錯誤:", e, received);
+        console.error("[WEBRTC] 接收數據錯誤:", e, received);
     }
 }
 

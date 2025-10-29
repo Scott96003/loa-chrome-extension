@@ -51,6 +51,7 @@ const WebRTCClientModule = (function() {
             this.role = role;
             this.ui = uiManager;
             this.ws = null;
+            this.webrtcTargetId = null;
             this.peerConnections = new Map();
             this.dataChannels = new Map();
             this.reconnectInterval = 3000;
@@ -135,9 +136,12 @@ const WebRTCClientModule = (function() {
 
                 if (this.role === 'hub') {
                     this.connectAllOnlineUsers();
+                    // 啟動心跳
+                    this._startHeartbeat();
                 }
-                // 啟動心跳
-                this._startHeartbeat();
+                if (this.role == 'spoke') {
+                    this.getWsAllOnlineUsers();
+                }                
             };
 
             this.ws.onmessage = (event) => this._handleWebSocketMessage(event);
@@ -212,22 +216,6 @@ const WebRTCClientModule = (function() {
             // 💥 新增檢查：過濾掉來自 'server' 的信令訊息
             // =======================================================
             const peerId = signal.senderId;
-            if (peerId === 'server') {
-                 // 這裡可以處理服務器發來的特殊 PONG 或其他指令，但不能是 WebRTC 信令
-                 // 由於您的伺服器邏輯未知，最安全的做法是直接忽略 WebRTC 相關的信令
-                 
-                 // 如果這個 'server' ID 發送的是 PONG，則這裡可能需要處理它。
-                 // 但為了避免創建 PeerConnection，我們只在這裡處理非 P2P 相關的信號。
-                 if (signal.type === 'pong') {
-                     // console.log("Received PONG from server.");
-                     return; 
-                 }
-                 
-                 // 忽略所有其他來自 'server' 的 WebRTC 信令
-                 console.warn(`[信令] 忽略來自 'server' 的 P2P 信號: ${signal.type}`);
-                 return;
-            }
-            // =======================================================
 
             if (signal.type === 'user_joined') {
                 const newUserId = signal.newUserId;
@@ -245,26 +233,29 @@ const WebRTCClientModule = (function() {
             
             if (signal.type === 'online_users_list') {
                 const userIds = signal.users || [];
-                
-                if (this.role !== 'hub') return; 
+                this.ui.appendMessage(`[${this.role}] 收到 ${userIds.length} 個在線用戶 ID，開始建立連線...`);
+                if (this.role == 'hub') {
+                                    
+                    userIds.forEach(async (targetId) => {
+                        const isConnectingOrOpen = this.dataChannels.has(targetId) && 
+                            (this.dataChannels.get(targetId).readyState === 'open' || 
+                                this.dataChannels.get(targetId).readyState === 'connecting');
+                            
+                        if (targetId !== this.clientId && !isConnectingOrOpen) {
+                            console.log(`[HUB] 為目標 ${targetId} 自動發送 Offer...`);
+                            await this.sendSdpOffer(targetId); 
+                        }
+                    });
+                    return;
+                }
 
-                this.ui.appendMessage(`[HUB] 收到 ${userIds.length} 個在線用戶 ID，開始建立連線...`);
-                
-                userIds.forEach(async (targetId) => {
-                    const isConnectingOrOpen = this.dataChannels.has(targetId) && 
-                        (this.dataChannels.get(targetId).readyState === 'open' || 
-                            this.dataChannels.get(targetId).readyState === 'connecting');
-                        
-                    if (targetId !== this.clientId && !isConnectingOrOpen) {
-                        console.log(`[HUB] 為目標 ${targetId} 自動發送 Offer...`);
-                        await this.sendSdpOffer(targetId); 
-                    }
-                });
-                return;
-            }
-
-            const pc = this._getOrCreatePeerConnection(peerId, false);
+                if (this.role == 'spoke') {
+                    console.log(`[${this.role}] WS已連線使用者`, userIds)                    
+                    return;
+                }
+            }                
             
+            // WEBRTC 使用指令
             switch (signal.type) {
                 case 'offer':
                     await pc.setRemoteDescription(new RTCSessionDescription(signal));
@@ -306,7 +297,7 @@ const WebRTCClientModule = (function() {
                  // 關閉 PeerConnection 確保資源釋放
                  pc.close(); 
             }
-
+            this.webrtcTargetId = null;
             this.peerConnections.delete(id);
             this.dataChannels.delete(id);
             this.chunkBuffers.delete(id); 
@@ -386,6 +377,7 @@ const WebRTCClientModule = (function() {
             return pc;
         }
 
+        // HUB 對 Spoke 發起 offer
         async sendSdpOffer(targetId) { 
             if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
                 this.ui.appendMessage("WebSocket 尚未連線，無法發送 Offer。");
@@ -426,8 +418,8 @@ const WebRTCClientModule = (function() {
         }
 
         async _sendSdpAnswer(targetId) { 
-            let pc = this.peerConnections.get(targetId); 
-
+            let pc = this._getOrCreatePeerConnection(targetId, false);
+            this.webrtcTargetId = targetId
             try {
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
@@ -465,7 +457,8 @@ const WebRTCClientModule = (function() {
                 }
 
                 if (this.role  === 'spoke') {
-                    this.requestSync(HUB_FIXED_ID); 
+                    // WEBRTC已連線, 請求同步資料
+                    this.requestSync(this.webrtcTargetId); 
                 }
             };
             
@@ -694,8 +687,23 @@ const WebRTCClientModule = (function() {
             }
         }
         
-        // --- 額外功能 (未修改) ---
 
+        // 取得WS 上所有連線資訊
+        getWsAllOnlineUsers() {
+            if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+                this.ui.appendMessage("WebSocket 尚未連線，無法請求在線用戶。");
+                return;
+            }
+
+            const request = {
+                type: 'request_online_users',
+                senderId: this.clientId
+            };
+            this.ws.send(JSON.stringify(request));
+            this.ui.appendMessage("[" + this.role + "] 已向伺服器請求在線用戶列表...");
+        }
+
+        // --- 額外功能 (未修改) ---
         connectAllOnlineUsers() {
             if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
                 this.ui.appendMessage("WebSocket 尚未連線，無法請求在線用戶。");
@@ -737,7 +745,7 @@ function startClient(role) {
     MY_ROLE = role;
     
     if (MY_ROLE === 'hub') {
-        MY_CLIENT_ID = HUB_FIXED_ID;
+        MY_CLIENT_ID = 'HUB_' + Math.random().toString(36).substring(2, 9);
     } else {
         MY_CLIENT_ID = 'SPK_' + Math.random().toString(36).substring(2, 9);
     }
