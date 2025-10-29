@@ -265,6 +265,11 @@ const WebRTCClientModule = (function() {
                 console.log(`[${this.role}] targetID 不是自己跳過`, signal)
                 return;
             }
+            // 以下是WEBRTC 連線需要判斷targetID 是否為自己
+            if (peerId == 'server') {
+                console.log(`[${this.role}] senderID 為 server 跳過 WEBRTC流程`, signal)
+                return;
+            }
             let pc = this._getOrCreatePeerConnection(peerId, true); 
             // WEBRTC 使用指令
             switch (signal.type) {
