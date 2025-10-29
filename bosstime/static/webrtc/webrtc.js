@@ -2,8 +2,7 @@
 // 必須使用 Punycode 格式
 // const WebRTC_WS_URL = "wss://loabosstime.xn--ihqt9a492c9lev96b.online/ws";
 const WebRTC_WS_URL = "wss://loabosstime.有毒不要來.online:8443/ws";
-const HUB_FIXED_ID = 'HUB_A_FIXED_ID';
-        
+  
 let MY_ROLE = null;
 let MY_CLIENT_ID = null;
 let webrtcClient = null;
@@ -51,16 +50,14 @@ const WebRTCClientModule = (function() {
             this.role = role;
             this.ui = uiManager;
             this.ws = null;
-            this.webrtcTargetId = null;
             this.peerConnections = new Map();
             this.dataChannels = new Map();
             this.reconnectInterval = 3000;
             this.reconnectAttempts = 0;
             this.chunkBuffers = new Map(); 
             
-            // 🎯 新增：用於管理 disconnected 狀態的超時計時器
+            // 🎯 優化 1: 用於管理 disconnected 狀態的超時計時器
             this._disconnectTimers = new Map();
-            // 在 WebRTCClient 類別的 constructor 中新增：
             this.heartbeatInterval = null;
             this.HEARTBEAT_TIMEOUT = 25000; // 25 秒發送一次 PING
         }
@@ -270,7 +267,9 @@ const WebRTCClientModule = (function() {
                 console.log(`[${this.role}] senderID 為 server 跳過 WEBRTC流程`, signal)
                 return;
             }
-            let pc = this._getOrCreatePeerConnection(peerId, true); 
+            let pc = this._getOrCreatePeerConnection(peerId, false); 
+
+
             // WEBRTC 使用指令
             switch (signal.type) {
                 case 'offer':
@@ -305,7 +304,10 @@ const WebRTCClientModule = (function() {
                  this._disconnectTimers.delete(id);
             }
 
+            // 2. 關閉 DataChannel
             if (dc && dc.readyState !== 'closed') {
+                // ⚠️ 移除 DataChannel 上的監聽器 (可選，但更嚴謹)
+                dc.onopen = dc.onmessage = dc.onclose = dc.onerror = null;
                 dc.close();
             }
 
@@ -313,7 +315,6 @@ const WebRTCClientModule = (function() {
                  // 關閉 PeerConnection 確保資源釋放
                  pc.close(); 
             }
-            this.webrtcTargetId = null;
             this.peerConnections.delete(id);
             this.dataChannels.delete(id);
             this.chunkBuffers.delete(id); 
@@ -435,7 +436,6 @@ const WebRTCClientModule = (function() {
 
         async _sendSdpAnswer(targetId) { 
             let pc = this._getOrCreatePeerConnection(targetId, false);
-            this.webrtcTargetId = targetId
             try {
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
@@ -451,12 +451,6 @@ const WebRTCClientModule = (function() {
             } catch (error) {
                 console.error("創建 Answer 失敗:", error);
             }
-        }
-        
-        // --- P2P 業務邏輯處理 (調用 webRTC_handleMessage 函式) ---
-
-        _handleP2PMessage(peerId, receivedObject) {
-            webRTC_handleMessage(peerId, receivedObject);
         }
 
 
@@ -474,10 +468,10 @@ const WebRTCClientModule = (function() {
 
                 if (this.role  === 'spoke') {
                     // WEBRTC已連線, 請求同步資料
-                    this.requestSync(this.webrtcTargetId); 
+                    this.requestSync(id); 
                 }
             };
-            
+
             channel.onmessage = (event) => {
                 const data = event.data;
                 let parsedData;
@@ -491,7 +485,8 @@ const WebRTCClientModule = (function() {
                     }
                     
                     if (parsedData && typeof parsedData === 'object') {
-                         this._handleP2PMessage(id, parsedData); 
+                            // 真正處理WebRTC 資料的地方
+                            webRTC_handleMessage(id, parsedData); 
                     } else {
                          this.ui.appendMessage(`[${id}] 對方 (純數據): ${data}`);
                     }
@@ -554,7 +549,7 @@ const WebRTCClientModule = (function() {
                     const logContent = JSON.stringify(fullObject).substring(0, 100);
                     this.ui.appendMessage(`[${id}] 對方 (已重組數據): (Object) ${logContent}... (總長: ${fullString.length})`);
                     
-                    this._handleP2PMessage(id, fullObject); 
+                    webRTC_handleMessage(id, fullObject); 
                     
                 } catch (e) {
                     console.error(`[${id}] 重組後的數據不是有效的 JSON:`, e);
@@ -577,7 +572,7 @@ const WebRTCClientModule = (function() {
                 bossListData: bossListData, 
                 config: config               
             };
-            this.sendChatMessage(message, targetId);
+            this.sendWebRTCChatMessage(message, targetId);
 
             if (targetId) {
                 this.ui.appendMessage(`[HUB] 單獨發送 Sync_Boss_Data 給 ${targetId}`);
@@ -597,7 +592,7 @@ const WebRTCClientModule = (function() {
                 deathInfo: deathInfo
             };
             
-            this.sendChatMessage(message);
+            this.sendWebRTCChatMessage(message);
             this.ui.appendMessage(`[HUB] 廣播 BOSS 死亡通知: ${deathInfo}`);
         }
         
@@ -613,7 +608,7 @@ const WebRTCClientModule = (function() {
             };
             
             if (this.dataChannels.has(targetHubId)) {
-                this.sendChatMessage(message, targetHubId);
+                this.sendWebRTCChatMessage(message, targetHubId);
                 this.ui.appendMessage(`[SPOKE] 向 HUB (${targetHubId}) 請求同步數據 (Ack_Sync)。`);
             } else {
                 console.error(`無法找到連線 ID: ${targetHubId}。`);
@@ -622,7 +617,8 @@ const WebRTCClientModule = (function() {
 
         // --- 通用發送函數 (未修改) ---
 
-        sendChatMessage(message, targetId = null) {
+        // 行 739 (替換整個 sendWebRTCChatMessage 函式)
+        sendWebRTCChatMessage(message, targetId = null) { 
             if (!message) {
                 console.warn("訊息內容為空，跳過發送。");
                 return;

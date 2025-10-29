@@ -13,8 +13,6 @@ function webRTC_handleMessage(peerId, received) {
                 break;
             case 'Boss_Death':
                 break;
-            case 'ping':
-                console.log("[WEBRTC] 收到心跳包");
             default:
                 console.log('[WEBRTC] 收到未知訊息類型:', type);
                 break;
