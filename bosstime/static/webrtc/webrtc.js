@@ -265,6 +265,7 @@ const WebRTCClientModule = (function() {
                 console.log(`[${this.role}] targetID 不是自己跳過`, signal)
                 return;
             }
+            let pc = this._getOrCreatePeerConnection(peerId, true); 
             // WEBRTC 使用指令
             switch (signal.type) {
                 case 'offer':
