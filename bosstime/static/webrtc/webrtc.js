@@ -218,13 +218,13 @@ const WebRTCClientModule = (function() {
             switch (signal.type) {
                 case 'user_joined':
                     const newUserId = signal.newUserId;
-            
+                    this.ui.appendMessage(`[HUB] 偵測到新用戶 [${newUserId}] 上線`);
                     if (newUserId !== this.clientId) {
                         if (this.role === 'hub') {
-                            this.ui.appendMessage(`[HUB] 偵測到新用戶 [${newUserId}] 上線，自動發起連線...`);
-                            await this.sendSdpOffer(newUserId); 
-                        } else {
-                            this.ui.appendMessage(`[SPOKE] 偵測到新用戶 [${newUserId}] 上線，靜待 Offer。`);
+                            if (targetId.includes("SPK_")) {
+                                this.ui.appendMessage(`[HUB] 偵測到新用戶 [${newUserId}] 上線，自動發起連線...`);
+                                await this.sendSdpOffer(newUserId); 
+                            }
                         }
                     }
                     break;
