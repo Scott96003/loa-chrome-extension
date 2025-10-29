@@ -217,44 +217,54 @@ const WebRTCClientModule = (function() {
             // =======================================================
             const peerId = signal.senderId;
 
-            if (signal.type === 'user_joined') {
-                const newUserId = signal.newUserId;
-                
-                if (newUserId !== this.clientId) {
-                    if (this.role === 'hub') {
-                        this.ui.appendMessage(`[HUB] 偵測到新用戶 [${newUserId}] 上線，自動發起連線...`);
-                        await this.sendSdpOffer(newUserId); 
-                    } else {
-                        this.ui.appendMessage(`[SPOKE] 偵測到新用戶 [${newUserId}] 上線，靜待 Offer。`);
+            // 非WEBRTC 連線相關
+            switch (signal.type) {
+                case 'user_joined':
+                    const newUserId = signal.newUserId;
+            
+                    if (newUserId !== this.clientId) {
+                        if (this.role === 'hub') {
+                            this.ui.appendMessage(`[HUB] 偵測到新用戶 [${newUserId}] 上線，自動發起連線...`);
+                            await this.sendSdpOffer(newUserId); 
+                        } else {
+                            this.ui.appendMessage(`[SPOKE] 偵測到新用戶 [${newUserId}] 上線，靜待 Offer。`);
+                        }
                     }
-                }
+                    break;
+                case 'online_users_list':
+                    const userIds = signal.users || [];
+                    this.ui.appendMessage(`[${this.role}] 收到 ${userIds.length} 個在線用戶 ID，開始建立連線...`);
+                    if (this.role == 'hub') {
+                                        
+                        userIds.forEach(async (targetId) => {
+                            const isConnectingOrOpen = this.dataChannels.has(targetId) && 
+                                (this.dataChannels.get(targetId).readyState === 'open' || 
+                                    this.dataChannels.get(targetId).readyState === 'connecting');
+                                
+                            if (targetId !== this.clientId && !isConnectingOrOpen) {
+                                console.log(`[HUB] 為目標 ${targetId} 自動發送 Offer...`);
+                                await this.sendSdpOffer(targetId); 
+                            }
+                        });
+                        return;
+                    }
+
+                    if (this.role == 'spoke') {
+                        console.log(`[${this.role}] WS已連線使用者`, userIds)
+                        return;
+                    }
+                    break;
+                case 'ping':
+                    break;
+                case 'pong':
+                    break;
+            }
+             
+            // 以下是WEBRTC 連線需要判斷targetID 是否為自己
+            if (signal.targetId !== this.clientId) {
+                console.log(`[${this.role}] targetID 不是自己跳過`, signal)
                 return;
             }
-            
-            if (signal.type === 'online_users_list') {
-                const userIds = signal.users || [];
-                this.ui.appendMessage(`[${this.role}] 收到 ${userIds.length} 個在線用戶 ID，開始建立連線...`);
-                if (this.role == 'hub') {
-                                    
-                    userIds.forEach(async (targetId) => {
-                        const isConnectingOrOpen = this.dataChannels.has(targetId) && 
-                            (this.dataChannels.get(targetId).readyState === 'open' || 
-                                this.dataChannels.get(targetId).readyState === 'connecting');
-                            
-                        if (targetId !== this.clientId && !isConnectingOrOpen) {
-                            console.log(`[HUB] 為目標 ${targetId} 自動發送 Offer...`);
-                            await this.sendSdpOffer(targetId); 
-                        }
-                    });
-                    return;
-                }
-
-                if (this.role == 'spoke') {
-                    console.log(`[${this.role}] WS已連線使用者`, userIds)                    
-                    return;
-                }
-            }                
-            
             // WEBRTC 使用指令
             switch (signal.type) {
                 case 'offer':
