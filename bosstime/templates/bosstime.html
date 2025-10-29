@@ -193,7 +193,7 @@
 
         #dragonGateStatusDisplay {
             white-space: pre-wrap; /* 確保換行符 (\n) 能被正確顯示 */
-            font-size: 12px;
+            font-size: 14px;
         }
         .flex-container {
             display: flex; /* 啟用 Flexbox 佈局 */
@@ -214,19 +214,19 @@
         }
 
     </style>
-    <script type="text/javascript" src = "../static/config.js"></script>
-    <script type="text/javascript" src = "../static/init.js"></script>
-    <script type="text/javascript" src = "../static/save.js"></script>
-    <script type="text/javascript" src = "../static/db.js"></script>
-    <script type="text/javascript" src = "../static/tablefunc.js"></script>
-    <script type="text/javascript" src = "../static/bossList.js"></script>
-    <script type="text/javascript" src = "../static/bossTimeContentScript.js"></script>
-    <script type="text/javascript" src = "../static/messageListen.js"></script>
-    <script type="text/javascript" src = "../static/sendMessageToDiscord.js"></script>
-    <script type="text/javascript" src = "../static/onloading.js"></script>
-    <script type="text/javascript" src = "../static/dragonGate.js"></script>
-    <script type="text/javascript" src = "../static/webrtc/webrtc.js"></script>
-    <script type="text/javascript" src = "../static/webrtc/webrtc_server.js"></script>
+    <script type="text/javascript" src = "/static/config.js"></script>
+    <script type="text/javascript" src = "/static/init.js"></script>
+    <script type="text/javascript" src = "/static/save.js"></script>
+    <script type="text/javascript" src = "/static/db.js"></script>
+    <script type="text/javascript" src = "/static/tablefunc.js"></script>
+    <script type="text/javascript" src = "/static/bossList.js"></script>
+    <script type="text/javascript" src = "/static/bossTimeContentScript.js"></script>
+    <script type="text/javascript" src = "/static/messageListen.js"></script>
+    <script type="text/javascript" src = "/static/sendMessageToDiscord.js"></script>
+    <script type="text/javascript" src = "/static/onloading.js"></script>
+    <script type="text/javascript" src = "/static/dragonGate.js"></script>
+    <script type="text/javascript" src = "/static/webrtc/webrtc.js"></script>
+    <script type="text/javascript" src = "/static/webrtc/webrtc_server.js"></script>
 </head>
 <body>
     <div class="flex-container">
@@ -251,7 +251,7 @@
         </div>
 
         <div id="dragonGateStatusContainer" style="width: 300px;margin-left: 30px; padding: 5px; border: 2px solid #5e47a9; border-radius: 8px;text-align: center;">
-            <h3 style="margin-top: 0; color: #a980ff;">龍門狀態追蹤</h3>
+            <h4 style="margin-top: 0; color: #a980ff;">龍門狀態追蹤</h4>
             <div id="dragonGateStatusDisplay"></div>
         </div>
         <div id="webrtc_div">
@@ -283,8 +283,6 @@
             <span>音量大小:</span><span id="percentageDisplay">50%</span><br>
             <input type="range" id="percentageSlider" min="0" max="100" step="1" value="50">            
         </div>
-        <br>
-        <button id="auto_speech_btn">自動播報</button><br>
         <span id="versionSpan">ver 2025.10.27</span>
     </div>
 
@@ -303,6 +301,31 @@
       <input type="datetime-local" id="datetimeForDeathTime" name="datetime"><br><br>
       <button id="confirmBtnForDeathTime">確認</button>
       <button id="cancelBtnForDeathTime">取消</button>
+    </div>
+    <div id="tts-overlay" style="
+        display: none; 
+        position: fixed; 
+        top: 0; left: 0; 
+        width: 100%; height: 100%; 
+        background: rgba(0, 0, 0, 0.9); 
+        color: white; 
+        z-index: 9999; 
+        text-align: center; 
+        padding-top: 20vh;
+    ">
+        <h2>偵測到行動裝置，請點擊啟動語音</h2>
+        <p>行動裝置需先點擊才能啟用自動語音播報。</p>
+        <button id="tts-unlock-button" style="
+            padding: 15px 30px; 
+            font-size: 1.2em; 
+            cursor: pointer; 
+            background-color: #4CAF50; 
+            color: white; 
+            border: none; 
+            border-radius: 5px;
+        ">
+            啟動播報
+        </button>
     </div>
 </body>
 
