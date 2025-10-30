@@ -209,6 +209,6 @@ window.onload = function() {
     
     setInterval(() => {
         document.getElementById("webrtc_div").innerHTML = getFormattedStatusHtml();
-    }, 5000);
+    }, 3000);
     
 };

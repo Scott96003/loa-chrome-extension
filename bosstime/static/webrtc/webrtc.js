@@ -58,8 +58,10 @@ const WebRTCClientModule = (function() {
             
             // 🎯 優化 1: 用於管理 disconnected 狀態的超時計時器
             this._disconnectTimers = new Map();
+            // 🎯 新增：總連線建立超時（例如 20 秒）
+            this.TOTAL_CONNECT_TIMEOUT = 20000;
             this.heartbeatInterval = null;
-            this.HEARTBEAT_TIMEOUT = 25000; // 25 秒發送一次 PING
+            this.HEARTBEAT_TIMEOUT = 25000; // 25 秒發送一次 PING            
         }
 
         // -----------------------------------------------------------------
@@ -350,29 +352,34 @@ const WebRTCClientModule = (function() {
                 console.log(`[${id}] ICE Connection State: ${pc.iceConnectionState}`);
                 const dcState = this.dataChannels.get(id) ? this.dataChannels.get(id).readyState : 'none';
                 this.ui.updatePeerStatus(id, pc.iceConnectionState, dcState);
-                
-                // 1. 清除舊計時器
+
+                // --- 1. 清除舊的 disconnected 超時計時器 ---
+                // ... (這部分保持不變，清除的是 DISCONNECTED 狀態的計時器) ...
                 if (this._disconnectTimers.has(id)) {
                     clearTimeout(this._disconnectTimers.get(id));
                     this._disconnectTimers.delete(id);
                 }
 
-                // 2. 處理 failed 或 closed 狀態 (立即清理)
+                // --- 2. 處理立即清理狀態 (failed 或 closed) ---
                 if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'closed') {
-                    // ⚠️ 確保這裡沒有任何延遲
+                    // ⚠️ 在清理連線前，清除所有相關定時器
+                    this._clearTotalConnectTimer(id); // 🎯 新增：清除總計時器
                     this._cleanupPeerConnection(id, pc.iceConnectionState);
-                    // 確保函數在清理後結束，避免後續邏輯干擾
                     return; 
-                
                 }
-                // 3. 🎯 新增：處理 disconnected 狀態 (啟動超時清理)
+
+                // --- 3. 處理已連線狀態 (connected/completed) ---
+                if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+                    this._clearTotalConnectTimer(id); // 🎯 新增：連線成功，清除總計時器
+                    console.log(`[${id}] ICE Connected 穩定。`);
+                    return;
+                }
+
+                // --- 4. 處理 disconnected 狀態 (啟動超時清理) ---
                 if (pc.iceConnectionState === 'disconnected') {
-                    console.warn(`[${id}] ICE Disconnected，啟動 5 秒超時清理計時器...`);
-                    // 5 秒後若未恢復，則視為失敗並清理
-                    const timer = setTimeout(() => {
-                        this._cleanupPeerConnection(id, 'ICE Disconnect Timeout');
-                    }, 5000); 
-                    this._disconnectTimers.set(id, timer);
+                    // ... (這部分保持不變，啟動的是 DISCONNECTED 狀態的計時器) ...
+                    // ...
+                    this._cleanupPeerConnection(id, pc.iceConnectionState);
                 }
             };
             
@@ -385,7 +392,9 @@ const WebRTCClientModule = (function() {
             }
 
             this.peerConnections.set(id, pc);
-            
+            // 🎯 啟動總超時計時器
+            this._startTotalConnectTimer(id, pc);
+
             if (isCaller) {
                 const channel = pc.createDataChannel('chat');
                 this.dataChannels.set(id, channel);
@@ -394,7 +403,34 @@ const WebRTCClientModule = (function() {
 
             return pc;
         }
+        // 🎯 新增：啟動連線總超時計時器
+        _startTotalConnectTimer(id, pc) {
+            // 確保只存在一個 total timer
+            this._clearTotalConnectTimer(id); 
 
+            this.ui.appendMessage(`[${id}] 啟動連線總超時計時器 (${this.TOTAL_CONNECT_TIMEOUT / 1000} 秒)...`);
+            
+            const timer = setTimeout(() => {
+                // 檢查狀態：如果仍然在 new 或 checking，強制清理
+                if (pc.iceConnectionState === 'new' || pc.iceConnectionState === 'checking') {
+                    this._cleanupPeerConnection(id, 'Total Connection Timeout');
+                }
+                // 無論如何，確保計時器從 Map 中移除
+                this._disconnectTimers.delete(id);
+            }, this.TOTAL_CONNECT_TIMEOUT); 
+
+            // 使用同一個 Map 儲存所有計時器，但用不同的 ID 命名，以區分 Total 和 Disconnected Timer
+            this._disconnectTimers.set(`TOTAL_${id}`, timer);
+        }
+        // 🎯 新增：清除連線總超時計時器
+        _clearTotalConnectTimer(id) {
+            const timerId = `TOTAL_${id}`;
+            if (this._disconnectTimers.has(timerId)) {
+                clearTimeout(this._disconnectTimers.get(timerId));
+                this._disconnectTimers.delete(timerId);
+                this.ui.appendMessage(`[${id}] 總連線超時計時器已清除。`);
+            }
+        }
         // HUB 對 Spoke 發起 offer
         async sendSdpOffer(targetId) { 
             if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
