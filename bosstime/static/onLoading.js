@@ -62,28 +62,19 @@ document.addEventListener("DOMContentLoaded", function() {
     slider = document.getElementById("percentageSlider");
     display = document.getElementById("percentageDisplay");
 
-    // 訊息事件
-    messageContainer = document.getElementById('messageContainer');
-    toggleMessageContainerBtn = document.getElementById('toggleMessageContainer');
-
-    toggleMessageContainerBtn.addEventListener('click', function() {
-        if (messageContainer.style.display === 'none' || messageContainer.style.display === '') {
-            messageContainer.style.display = 'block';
-        } else {
-            messageContainer.style.display = 'none';
+    // 訊息按鈕
+    document.getElementById('toggleMessageContainer').addEventListener('click', function() {
+        document.getElementById('messageContainer').classList.toggle('hidden');
+        if (isMobileDevice()) {
+            document.getElementById("dragonGateStatusContainer").classList.toggle('hidden');
+            document.getElementById("webrtc_div").classList.toggle('hidden');
         }
     });
 
 
-    settingContainer = document.getElementById('setting_div');
-    toggleSettingContainerBtn = document.getElementById('toggleSettingContainer');
-
-    toggleSettingContainerBtn .addEventListener('click', function() {
-        if (settingContainer.style.display === 'none' || settingContainer.style.display === '') {
-            settingContainer.style.display = 'block';
-        } else {
-            settingContainer.style.display = 'none';
-        }
+    // 設定按鈕
+    document.getElementById('toggleSettingContainer').addEventListener('click', function() {
+        document.getElementById('setting_div').classList.toggle('hidden');
     });
 
     // 添加事件监听器
@@ -210,5 +201,9 @@ window.onload = function() {
     setInterval(() => {
         document.getElementById("webrtc_div").innerHTML = getFormattedStatusHtml();
     }, 3000);
-    
+    if (isMobileDevice()) {
+        document.getElementById("dragonGateStatusContainer").classList.toggle('hidden');
+        document.getElementById("webrtc_div").classList.toggle('hidden');
+        document.getElementById("messageContainer").classList.toggle('hidden');
+    }
 };

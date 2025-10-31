@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LOA-BOSS監控</title>
+    <link rel="stylesheet" href="/static/css/bossTooltip.css">
+    <link rel="icon" type="image/png" href="/icon/favicon.ico">
     <style>
         :root {
             --boss顏色-25: #20eebfd4;
@@ -133,6 +135,14 @@
             border-radius: 4px;       /* 範例：圓角 */
             width: 100px;
         }
+                /* 當螢幕寬度小於或等於 600px 時（通常作為手機的臨界點） */
+        @media (max-width: 600px) {
+            /* 手機專屬的樣式寫在這裡 */
+            #setting_container {
+                bottom: 0px;
+                top: unset;
+            }
+        }
         .floating-message {
           position: fixed;
           top: 50%;
@@ -204,6 +214,10 @@
             padding: 2px;
             margin: 2px;
          }
+        #filterButtons button {
+            font-size: 18px;
+            margin: 3px;
+        }
         .box {
             flex: 1; /* 關鍵：讓三個子元素平均佔據可用空間 */
             /* flex: 1; 相當於 flex-grow: 1; flex-shrink: 1; flex-basis: 0; */
@@ -212,7 +226,10 @@
             margin: 5px;
             text-align: center;
         }
-
+        .hidden {
+            /* 關鍵：將元素完全從頁面佈局中移除 */
+            display: none !important; 
+        }
     </style>
     <script type="text/javascript" src = "/static/config.js"></script>
     <script type="text/javascript" src = "/static/init.js"></script>
@@ -220,6 +237,7 @@
     <script type="text/javascript" src = "/static/db.js"></script>
     <script type="text/javascript" src = "/static/tablefunc.js"></script>
     <script type="text/javascript" src = "/static/bossList.js"></script>
+    <script type="text/javascript" src = "/static/bossTooltip.js"></script>
     <script type="text/javascript" src = "/static/bossTimeContentScript.js"></script>
     <script type="text/javascript" src = "/static/messageListen.js"></script>
     <script type="text/javascript" src = "/static/sendMessageToDiscord.js"></script>
@@ -227,10 +245,12 @@
     <script type="text/javascript" src = "/static/dragonGate.js"></script>
     <script type="text/javascript" src = "/static/webrtc/webrtc.js"></script>
     <script type="text/javascript" src = "/static/webrtc/webrtc_client.js"></script>
+
+    
 </head>
 <body>
     <div class="flex-container">
-        <div id="setting_div" hidden="true">
+        <div id="setting_div" class="hidden">
             <input type="number" id="bossid" placeholder="bossID">
             <input type="text" id="bossName" placeholder="頭目名稱">
             <input type="number" id="respawnTime" placeholder="重生時間(小時)">
@@ -258,7 +278,7 @@
 
         </div>
     </div>
-
+    <div id="reboot_message"></div>
     <div id="filterButtons">
         <button data-boss-name="">顯示全部</button>
         <button data-boss-name="1,2,91202,91605,91516">三大龍</button>

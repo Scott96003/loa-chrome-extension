@@ -1,26 +1,34 @@
-// 監聽來自 Background Script 的消息 (Step1)
-chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-    sendResponse({ status: "ok" });
-    // **最可靠的過濾方式：** 判斷訊息是否來自另一個 Tab 的 Content Script
-    if (sender.tab) {
-        // 訊息來自一個 Tab 中的 Content Script，這是您要忽略的廣播
-        // console.log("忽略來自 Content Script 的廣播訊息:", sender.tab.id);
-        return;
-    }
-    
-    if (typeof message === 'object') {
-      // 在這裡處理接收到的消息
-      var bossData = message;
-      bossData.bossName = decodeURIComponent(message.bossName);
-      bossData.emblem = decodeURIComponent(message.emblem);
-      console.log(sender.tab, " Boss死亡資訊:", bossData);
-      updateBossData(bossData);
-      
-      // 透過 webRTC 同步
-      send_Boss_Death(bossData);
-    }
 
-});
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+  // 只有在確認存在時才執行註冊監聽器的操作
+  // 監聽來自 Background Script 的消息 (Step1)
+  chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+      sendResponse({ status: "ok" });
+      // **最可靠的過濾方式：** 判斷訊息是否來自另一個 Tab 的 Content Script
+      if (sender.tab) {
+          // 訊息來自一個 Tab 中的 Content Script，這是您要忽略的廣播
+          // console.log("忽略來自 Content Script 的廣播訊息:", sender.tab.id);
+          return;
+      }
+      
+      if (typeof message === 'object') {
+        // 在這裡處理接收到的消息
+        var bossData = message;
+        bossData.bossName = decodeURIComponent(message.bossName);
+        bossData.emblem = decodeURIComponent(message.emblem);
+        console.log(sender.tab, " Boss死亡資訊:", bossData);
+        updateBossData(bossData);
+        
+        // 透過 webRTC 同步
+        send_Boss_Death(bossData);
+      }
+
+  });
+} else {
+    // 這裡可以選擇性地加入一些錯誤記錄，說明 API 不可用
+    console.warn("警告：chrome.runtime.onMessage 在此環境中不可用。");
+}  
+
 // 監聽來自 Background Script 的消息 (Step2)
 function updateBossData(bossData) {
 

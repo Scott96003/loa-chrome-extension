@@ -18,7 +18,7 @@ function webRTC_handleMessage(peerId, received) {
                 reDrawBossList();
                 reDrawMessage();
                 refresh();
-                tracker.processDeathArray(抓取所有龍的死亡時間()); 
+                tracker.resetGatePeriod();
                 console.log('[WEBRTC] 正在處理 Sync_Boss_Data 數據同步...', "完成");
                 break;
             case 'Boss_Death': // 正確: 處理聊天訊息\

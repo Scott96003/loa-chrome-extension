@@ -8,7 +8,7 @@ var slider = document.getElementById("percentageSlider");
 var display = document.getElementById("percentageDisplay");
 
 // 訊息用變數
-var messageContainer = document.getElementById('messageContainer');
+const messageContainer = document.getElementById('messageContainer');
 var toggleMessageContainerBtn = document.getElementById('toggleMessageContainer');
 var messageCount = 0;
 
@@ -150,12 +150,18 @@ function addBossTR(data) {
 
     // 應用特殊格式/事件
     if (config.format === 'tooltip' && config.key === 'death') {
+      if (isMobileDevice()) {
+        cell.addEventListener("click", function(event) {
+          showFullScreenView(event, data);
+        })
+      } else {
         cell.addEventListener("mouseover", function(event) {
           showTooltip(event, data);
         });
         cell.addEventListener("mouseout", function() {
           hideTooltip();
         });
+      }
     }
 
     // 設置刪除按鈕事件
@@ -898,14 +904,15 @@ function showfloatingMessage(msg) {
 
 function drawMessage(message) {
     var p = document.createElement('p');
+    const container = document.getElementById('messageContainer')
     p.textContent = message
-    messageContainer.appendChild(p);
+    container.appendChild(p);
     messageCount++;
     if (messageCount > 100) {
-        messageContainer.removeChild(messageContainer.firstChild);
+        container.removeChild(container.firstChild);
         messageCount--;
     }
-    messageContainer.scrollTop = messageContainer.scrollHeight;
+    container.scrollTop = container.scrollHeight;
 }
 
 
@@ -982,7 +989,7 @@ function 取得Boss歷史資料(myDayTime) {
       // 只有在確認存在時才執行註冊監聽器的操作
   } else {
       // 這裡可以選擇性地加入一些錯誤記錄，說明 API 不可用
-      console.error("錯誤：chrome.tabs.query 在此環境中不可用。");
+      console.warn("警告：chrome.tabs.query 在此環境中不可用。");
       return;
   }  
   chrome.tabs.query({ url: 'https://discord.com/channels/1124664207921655830/1186526426770444329' }, (tabs) => {

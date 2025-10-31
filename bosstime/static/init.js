@@ -27,7 +27,7 @@ function initializeMessageList() {
 }
 
 function reDrawMessage() {
-    messageContainer.innerHTML = ""
+    document.getElementById('messageContainer').innerHTML = ""
     messageCount = 0;
     // 使用 for...of 迴圈代替 forEach
     for (const item of config.messageList) {
@@ -96,6 +96,7 @@ function initializeRebootTime() {
 
     const storedRebootTime = new Date(storedRebootTimeValue || lastTuesdayAt1202);
     config.rebootTime = storedRebootTime;
+    document.getElementById("reboot_message").innerHTML = "重新開機時間：" + config.rebootTime.toLocaleString('zh-tw', {hour12: false});
 }
 
 /**
