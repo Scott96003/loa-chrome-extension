@@ -119,7 +119,6 @@
             position: fixed;
             top: 0px;
             right: 0;
-            width: 150px;
             color: #f2f2f2; /* 淡灰色字體 */
             text-align: right;
             z-index: 1001;
@@ -129,11 +128,11 @@
             background-color: #007bff; /* 範例：藍色背景 */
             color: white;             /* 範例：白色文字 */
             border: 1px solid #0056b3; /* 範例：深藍色邊框 */
-            padding: 8px 15px;        /* 範例：內邊距 */
-            margin-top: 5px;          /* 範例：與上方的間距 */
+            padding: 5px 5px;        /* 範例：內邊距 */
+            margin: 5px;          /* 範例：與上方的間距 */
             cursor: pointer;          /* 範例：指標樣式 */
             border-radius: 4px;       /* 範例：圓角 */
-            width: 100px;
+            width: 100%;
         }
                 /* 當螢幕寬度小於或等於 600px 時（通常作為手機的臨界點） */
         @media (max-width: 600px) {
@@ -297,13 +296,13 @@
     </div>
     <div class="message-container" id="messageContainer" style="display:block;"></div>
     <div id="setting_container">
-        <button id="toggleMessageContainer">顯示訊息</button><br>
-        <button id="toggleSettingContainer">設定</button><br>
+        <button id="toggleMessageContainer" style="width: 80px;">顯示訊息</button><br>
+        <button id="toggleSettingContainer" style="width: 80px;">設定</button><br>
         <div>
-            <span>音量大小:</span><span id="percentageDisplay">50%</span><br>
-            <input type="range" id="percentageSlider" min="0" max="100" step="1" value="50">            
+            <span>音量:</span><span id="percentageDisplay">50%</span><br>
+            <input type="range" id="percentageSlider" min="0" max="100" step="1" value="50" style="width: 80px;">            
         </div>
-        <span id="versionSpan">ver 2025.10.27</span>
+        <span id="versionSpan">ver251027</span>
     </div>
 
     <div class="floating-message" id="floatingMessage">

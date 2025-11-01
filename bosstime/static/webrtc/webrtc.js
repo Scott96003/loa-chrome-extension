@@ -61,7 +61,9 @@ const WebRTCClientModule = (function() {
             // 🎯 新增：總連線建立超時（例如 20 秒）
             this.TOTAL_CONNECT_TIMEOUT = 20000;
             this.heartbeatInterval = null;
-            this.HEARTBEAT_TIMEOUT = 25000; // 25 秒發送一次 PING            
+            this.HEARTBEAT_TIMEOUT = 25000; // 25 秒發送一次 PING
+            this._pongTimeoutTimer = null; // 🎯 新增：追蹤 PONG 回應的計時器
+            this.PONG_EXPECT_TIMEOUT = this.HEARTBEAT_TIMEOUT + 5000; // 30 秒內必須收到 PONG
         }
 
         // -----------------------------------------------------------------
@@ -169,7 +171,8 @@ const WebRTCClientModule = (function() {
                         senderId: this.clientId
                     });
                     this.ws.send(pingMessage);
-                    // console.log("Sent PING to server.");
+                    // 🎯 每次發送 PING 後，重設 PONG 追蹤計時器
+                    this._setPongTimeout();
                 }
             }, this.HEARTBEAT_TIMEOUT);
         }
@@ -179,7 +182,30 @@ const WebRTCClientModule = (function() {
                 clearInterval(this.heartbeatInterval);
                 this.heartbeatInterval = null;
             }
-        }        
+            // 🎯 新增：停止心跳時，同時清除 PONG 追蹤
+            this._clearPongTimeout();
+        }
+
+        // 🎯 新增：PONG 追蹤計時器管理函式
+        _setPongTimeout() {
+            this._clearPongTimeout();
+            
+            this._pongTimeoutTimer = setTimeout(() => {
+                // 如果超時了，表示連線可能已死
+                console.error(`[HUB] 致命錯誤：超過 ${this.PONG_EXPECT_TIMEOUT / 1000} 秒未收到 PONG，強制關閉 WS。`);
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.close(); // 觸發 onclose，進而觸發重連
+                }
+            }, this.PONG_EXPECT_TIMEOUT);
+        }
+
+        _clearPongTimeout() {
+            if (this._pongTimeoutTimer) {
+                clearTimeout(this._pongTimeoutTimer);
+                this._pongTimeoutTimer = null;
+            }
+        }
+
         _scheduleReconnect() {
             if (!this.ws || this.ws.readyState !== WebSocket.CLOSED) {
                 return;
@@ -255,8 +281,14 @@ const WebRTCClientModule = (function() {
                     }
                     break;
                 case 'ping':
+                    // 如果 Hub 收到 Spoke 的 Ping，可考慮回覆 Pong，但這裡保持不變
                     break;
                 case 'pong':
+                    // 🎯 修正：收到 Pong，表示連線活躍，清除超時計時器
+                    if (signal.targetId == this.clientId) {
+                        console.log("正確收到pong 回應, 清除計時器");
+                        this._clearPongTimeout();
+                    }                    
                     break;
             }
              

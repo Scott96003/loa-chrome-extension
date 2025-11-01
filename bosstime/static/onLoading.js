@@ -65,16 +65,14 @@ document.addEventListener("DOMContentLoaded", function() {
     // 訊息按鈕
     document.getElementById('toggleMessageContainer').addEventListener('click', function() {
         document.getElementById('messageContainer').classList.toggle('hidden');
-        if (isMobileDevice()) {
-            document.getElementById("dragonGateStatusContainer").classList.toggle('hidden');
-            document.getElementById("webrtc_div").classList.toggle('hidden');
-        }
     });
 
 
     // 設定按鈕
     document.getElementById('toggleSettingContainer').addEventListener('click', function() {
         document.getElementById('setting_div').classList.toggle('hidden');
+        document.getElementById("dragonGateStatusContainer").classList.toggle('hidden');
+        document.getElementById("webrtc_div").classList.toggle('hidden');
     });
 
     // 添加事件监听器
