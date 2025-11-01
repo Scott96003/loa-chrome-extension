@@ -181,7 +181,7 @@ templates = Jinja2Templates(directory=template_dir)
 static_dir = project_root_dir / "bosstime" / "static"
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 icon_dir = project_root_dir / "bosstime" / "icon"
-app.mount("/icon", StaticFiles(directory=icon_dir), name="static")
+app.mount("/icon", StaticFiles(directory=icon_dir), name="icon_files")
 
 logger.info(f"模板目錄: {template_dir}")
 logger.info(f"靜態目錄: {static_dir}")
