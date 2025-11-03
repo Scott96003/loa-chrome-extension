@@ -422,6 +422,7 @@ function updateBossRemainingTime(bossID = 0) {
 
     // 如果有指定bossID, 且判斷到id 不相符, 就換下一個
     if (bossID != 0 && bossData.id != bossID) {
+      // 這個 return 不會直接跳出整個 updateBossRemainingTime(bossID) 函式。
       return;
     }
 
@@ -457,8 +458,8 @@ function updateBossRemainingTime(bossID = 0) {
     }
 
     // 透過 key 或 data-col-id 找到儲存格並更新
-    const emblemCell = row.querySelector('[contenteditable="true"]:nth-child(' + (columnConfig.findIndex(c => c.key === 'emblem') + 1) + ')');
-    const deathTimeCell = row.querySelector('[contenteditable="true"]:nth-child(' + (columnConfig.findIndex(c => c.key === 'death') + 1) + ')');
+    const emblemCell = row.querySelector(':nth-child(' + (columnConfig.findIndex(c => c.key === 'emblem') + 1) + ')');
+    const deathTimeCell = row.querySelector(':nth-child(' + (columnConfig.findIndex(c => c.key === 'death') + 1) + ')');
 
     if (deathTimeCell) deathTimeCell.innerText = bossData.death;
     if (emblemCell) emblemCell.innerText = bossData.emblem;
