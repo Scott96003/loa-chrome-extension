@@ -184,6 +184,7 @@ const WebRTCClientModule = (function() {
             if (this.heartbeatInterval) {
                 clearInterval(this.heartbeatInterval);
                 this.heartbeatInterval = null;
+                this.missPong = 0;
             }
         }
 
