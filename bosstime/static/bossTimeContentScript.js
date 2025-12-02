@@ -185,6 +185,7 @@ function addBossTR(data) {
 // 刷新數據
 function refresh() {
   console.log('刷新數據');
+  document.getElementById("reboot_message").innerHTML = "重新開機時間：" + config.rebootTime.toLocaleString('zh-tw', {hour12: false});
   updateBossRemainingTime();
   sortListByRespawnTime();
   filterTable(filterBossIDs);
@@ -210,7 +211,7 @@ function confirmDateTime() {
     // 設定重開機時間
     config.rebootTime = now;
 
-    saveToLocalStorage();
+    refresh();
 
     // 更新dc
     SendToDC(0);
