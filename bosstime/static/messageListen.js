@@ -126,8 +126,8 @@ function updateBossData(bossData) {
 
         // 單獨更新數據
         updateBossRemainingTime(parseInt(boss.id));
-        // 使用節流方法實現refresh
-        throttle(refresh(), 500);
+        // 使用在 bossTimeContentScript.js 中定義的節流版 refresh 函數
+        throttledRefresh();
         
         // 檢查是否觸發龍門
         tracker.checkBossData(bossData);

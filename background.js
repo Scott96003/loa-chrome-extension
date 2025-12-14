@@ -72,11 +72,16 @@ function processNextMessage() {
       );
 
       if (bossTimeTab) {
-        if (message == "回到LOA-BossTime") {
+        // 檢查是否為特殊指令，例如切換分頁
+        if (message === "回到LOA-BossTime" || (message && message.action === "回到LOA-BossTime")) {
           chrome.tabs.update(bossTimeTab.id, { active: true });
+          // 這是個指令，不是要傳遞的資料，處理完後直接處理下一個訊息
+          processingMessage = false;
+          processNextMessage();
+        } else {
+          // 如果頁面已經存在，則向其發送資料
+          chromeSendMessage(bossTimeTab, message);
         }
-        // 如果頁面已經存在，則向其發送資料
-        chromeSendMessage(bossTimeTab, message);
       } else {
         // **修正 1：移除 setTimeout 及其遞迴。**
         // **修正 2：將 message 傳遞給 createBossTimePage。**
@@ -128,3 +133,19 @@ function createBossTimePage(message) {
     chrome.tabs.onUpdated.addListener(listener); 
   });
 }
+
+// 監聽擴充功能圖示的點擊事件
+chrome.action.onClicked.addListener((tab) => {
+  const dashboardUrl = chrome.runtime.getURL("bosstime/templates/bosstime.html");
+  
+  // 查詢是否已經有儀表板分頁存在
+  chrome.tabs.query({ url: dashboardUrl }, (tabs) => {
+    if (tabs.length > 0) {
+      // 如果存在，則切換到該分頁
+      chrome.tabs.update(tabs[0].id, { active: true });
+    } else {
+      // 如果不存在，則創建一個新的儀表板分頁
+      chrome.tabs.create({ url: dashboardUrl });
+    }
+  });
+});

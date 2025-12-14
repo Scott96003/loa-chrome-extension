@@ -196,6 +196,10 @@ async def get_homepage(request: Request):
     """渲染 loa_boss_time.html 作為網站的首頁。"""
     return templates.TemplateResponse("loa_boss_time.html", {"request": request})
 
+@app.get("/flashcard", summary="國字練習")
+async def get_flashcard_page(request: Request):
+    return templates.TemplateResponse("flashcard.html", {"request": request})
+
 # ----------------------------------------------
 # 5. WebSocket 路由 - 核心處理邏輯
 # ----------------------------------------------

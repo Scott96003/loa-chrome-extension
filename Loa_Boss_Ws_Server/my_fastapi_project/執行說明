@@ -1,0 +1,34 @@
+cd /Users/f96003gmail.com/Documents/loa-chrome-extension/Loa_Boss_Ws_Server/my_fastapi_project/websocket_server.py
+source venv/bin/activate
+uvicorn websocket_server:app --reload --host 0.0.0.0 --port 8443 --ssl-keyfile ./key.pem --ssl-certfile ./server.pem
+
+
+### 確保啟動腳本具有執行權限：
+chmod +x /Users/f96003gmail.com/Documents/loa-chrome-extension/Loa_Boss_Ws_Server/my_fastapi_project/start_fastapi.sh
+
+### 3. 載入 `launchd` 服務
+
+使用 `launchctl` 命令載入服務。這會立即啟動它，並設定為開機自動運行：
+
+```bash
+launchctl load ~/Library/LaunchAgents/com.user.fastapi.plist
+
+### 4. 驗證服務狀態
+
+檢查服務是否正在運行：
+
+```bash
+launchctl list | grep fastapi
+如果看到狀態碼為 `0`，則表示服務已成功啟動。
+
+### 📌 服務管理命令 (備忘)
+
+* **停止服務：**
+    ```bash
+    launchctl unload ~/Library/LaunchAgents/com.user.fastapi.plist
+    * **重新啟動服務：**
+    ```bash
+    launchctl unload ~/Library/LaunchAgents/com.user.fastapi.plist
+    launchctl load ~/Library/LaunchAgents/com.user.fastapi.plist
+    * **查看日誌：**
+    如果服務啟動失敗，請檢查 `/tmp/com.user.fastapi.stderr.log` 檔案獲取錯誤資訊。

@@ -9,7 +9,6 @@
 
 // 擇一（browser_action / page_action ）或不填
 "action": {
-  "default_popup": "popup/popup.html",
   "default_icon": "img/labour-day.png",
   "default_title": "天堂Boss提醒"
 },

@@ -1,4 +1,5 @@
 fastapi
 uvicorn
 gunicorn
+jinja2
 websockets  # 仍需要 websockets 函式庫，因為它在您的邏輯中被使用

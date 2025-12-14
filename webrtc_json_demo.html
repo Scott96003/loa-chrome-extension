@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebRTC 多方連線信令範例 - 模組分離與狀態顯示</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        textarea { width: 100%; margin-bottom: 10px; padding: 5px; box-sizing: border-box; }
+        button { margin-right: 10px; padding: 10px 15px; cursor: pointer; }
+        #messages { margin-top: 20px; border: 1px solid #ccc; padding: 10px; max-height: 300px; overflow-y: auto; }
+        .log-id { font-weight: bold; color: blue; }
+        .auto-connect-btn { background-color: #4CAF50; color: white; border: none; }
+        .status-dot { height: 12px; width: 12px; background-color: grey; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .status-connected { background-color: green; }
+        .status-disconnected { background-color: red; }
+        #roleSelection button { font-weight: bold; }
+        .hub-btn { background-color: darkred; color: white; }
+        .spoke-btn { background-color: darkgreen; color: white; }
+        
+        /* WebRTC 狀態列表樣式 */
+        #peerStatusList { border: 1px solid #ddd; padding: 10px; list-style: none; margin-top: 10px; }
+        #peerStatusList li { margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dotted #eee; }
+        .status-ok { color: green; font-weight: bold; }
+        .status-warn { color: orange; }
+        .status-err { color: red; }
+    </style>
+</head>
+<body>
+    <h1>WebRTC 信令客戶端 (星狀網路)</h1>
+    
+    <h2>步驟 1: 設定角色並啟動連線</h2>
+    <div id="roleSelection">
+        <p>請先決定當前視窗的角色：</p>
+        <button class="hub-btn" onclick="setRoleAndStart('hub')">👑 設定為 HUB (中心)</button>
+        <button class="spoke-btn" onclick="setRoleAndStart('spoke')">⚙️ 設定為 SPOKE (客戶端)</button>
+    </div>
+    
+    <h2>步驟 2: 狀態總覽</h2>
+    <p>
+        <span class="status-dot" id="wsStatusDot"></span>
+        <span class="log-id">我的 ID:</span> <span id="clientIdDisplay">...</span>
+        <br>WebSocket 狀態: <span id="wsStatusText">未連線</span>
+        <br>👉 **我的角色**: <span id="clientRoleDisplay" style="font-weight: bold; color: darkorange;">未設定</span>
+    </p>
+
+    <h3>WebRTC P2P 連線狀態</h3>
+    <ul id="peerStatusList">
+        <li>尚未建立任何 P2P 連線。</li>
+    </ul>
+
+    <h2>步驟 3: 操作</h2>
+    <div id="operations" style="display: none;">
+        <button onclick="webrtcClient.sendSdpOffer()">傳送 Offer (需輸入目標 ID)</button>
+        <button class="auto-connect-btn" onclick="webrtcClient.connectAllOnlineUsers()">⚡️ [僅 HUB 使用] 連線所有在線用戶</button>
+        <button onclick="webrtcClient.sendChatMessage()">群發訊息</button>
+    </div>
+    
+
+    <h2>SDP 資訊 (用於除錯)</h2>
+    <textarea id="localSdp" placeholder="本地 SDP" rows="5" readonly></textarea>
+    <textarea id="remoteSdp" placeholder="遠端 SDP (最後接收的 Offer/Answer)" rows="5" readonly></textarea>
+
+    <h2>訊息記錄</h2>
+    <div id="messages"></div>
+
+    <script>
+        // ----------------------------------------------------
+        // 1. 全域設定與 UI 變數 (供 WebRTCClient 讀取)
+        // ----------------------------------------------------
+        
+        const WS_URL = 'wss://loa-boss-ws-server.onrender.com/ws';
+        const HUB_FIXED_ID = 'HUB_A_FIXED_ID';
+        
+        let MY_ROLE = null;
+        let MY_CLIENT_ID = null;
+        let webrtcClient = null;
+        
+        const configuration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' }
+            ]
+        };
+        
+        // 🔥 UI 函數集合 - 將所有 DOM 操作集中在此，供模組呼叫
+        const UIManager = {
+            appendMessage(msg) {
+                const container = document.getElementById('messages');
+                container.innerHTML += `<p>${msg}</p>`;
+                container.scrollTop = container.scrollHeight;
+            },
+
+            updateWsStatus(status) {
+                const dot = document.getElementById('wsStatusDot');
+                const text = document.getElementById('wsStatusText');
+                
+                dot.className = 'status-dot';
+                if (status === 'connected') {
+                    dot.classList.add('status-connected');
+                    text.textContent = '連線成功';
+                } else if (status === 'connecting') {
+                    text.textContent = '嘗試連線中...';
+                } else if (status === 'disconnected') {
+                    dot.classList.add('status-disconnected');
+                    text.textContent = '已斷線/連線失敗';
+                } else {
+                    text.textContent = '未連線';
+                }
+            },
+            
+            updateSdpDisplay(type, sdp) {
+                if (type === 'local') {
+                    document.getElementById('localSdp').value = JSON.stringify(sdp, null, 2);
+                } else if (type === 'remote') {
+                    document.getElementById('remoteSdp').value = JSON.stringify(sdp, null, 2);
+                }
+            },
+            
+            updatePeerStatus(peerId, iceState, dataChannelState) {
+                const list = document.getElementById('peerStatusList');
+                let listItem = document.getElementById(`peer-${peerId}`);
+
+                if (!listItem) {
+                    listItem = document.createElement('li');
+                    listItem.id = `peer-${peerId}`;
+                    list.appendChild(listItem);
+                    
+                    if (list.querySelector('li').textContent === '尚未建立任何 P2P 連線。') {
+                        list.removeChild(list.querySelector('li'));
+                    }
+                }
+                
+                let iceClass = 'status-warn';
+                if (iceState === 'connected' || iceState === 'completed') {
+                    iceClass = 'status-ok';
+                } else if (iceState === 'failed' || iceState === 'closed') {
+                    iceClass = 'status-err';
+                }
+
+                let dcClass = 'status-warn';
+                if (dataChannelState === 'open') {
+                    dcClass = 'status-ok';
+                } else if (dataChannelState === 'closed' || dataChannelState === 'none') {
+                    dcClass = 'status-err';
+                }
+                
+                // ICE connected/completed 但 DC 處於 connecting/closing，維持橘色警告
+                if ((iceState === 'connected' || iceState === 'completed') && 
+                    (dataChannelState === 'connecting' || dataChannelState === 'closing')) {
+                    dcClass = 'status-warn';
+                }
+
+                listItem.innerHTML = `
+                    **對手 ID:** ${peerId}
+                    <br>
+                    ICE 狀態: <span class="${iceClass}">${iceState}</span> | 
+                    DC 狀態: <span class="${dcClass}">${dataChannelState}</span>
+                `;
+                
+                if (iceState === 'closed' || iceState === 'failed') { 
+                     // 延遲移除，讓用戶看到最終狀態
+                     setTimeout(() => {
+                         const finalItem = document.getElementById(`peer-${peerId}`);
+                         if (finalItem) {
+                             list.removeChild(finalItem);
+                             if (list.children.length === 0) {
+                                list.innerHTML = '<li>尚未建立任何 P2P 連線。</li>';
+                             }
+                         }
+                     }, 5000); 
+                }
+            }
+        };
+
+        // ----------------------------------------------------
+        // 2. WebRTC 客戶端模組 (獨立於 UI)
+        // ----------------------------------------------------
+
+        const WebRTCClientModule = (function() {
+            class WebRTCClient {
+                constructor(clientId, wsUrl, config, role, uiManager) {
+                    this.clientId = clientId;
+                    this.wsUrl = wsUrl;
+                    this.config = config;
+                    this.role = role;
+                    this.ui = uiManager;
+                    this.ws = null;
+                    this.peerConnections = new Map();
+                    this.dataChannels = new Map();
+                    this.reconnectInterval = 3000;
+                    this.reconnectAttempts = 0;
+                }
+
+                // --- WebSocket 連線與重連機制 ---
+
+                startConnection() {
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ui.appendMessage("<span style='color: orange;'>WebSocket 已連線，無需重複啟動。</span>");
+                        return;
+                    }
+                    this._connectWebSocket();
+                }
+
+                _connectWebSocket() {
+                    this.ui.updateWsStatus('connecting');
+                    this.ui.appendMessage(`嘗試連線到信令伺服器: ${this.wsUrl}`);
+                    
+                    try {
+                        this.ws = new WebSocket(this.wsUrl);
+                    } catch (e) {
+                        this.ui.appendMessage(`<span style='color: red;'>WebSocket 建立失敗: ${e.message}</span>`);
+                        this._scheduleReconnect();
+                        return;
+                    }
+
+                    this.ws.onopen = () => {
+                        this.reconnectAttempts = 0;
+                        this.ui.updateWsStatus('connected');
+                        
+                        const registrationMessage = {
+                            type: 'client_register', 
+                            senderId: this.clientId
+                        };
+                        this.ws.send(JSON.stringify(registrationMessage));
+                        this.ui.appendMessage(`<span style="color: grey;">信令連線成功，ID: ${this.clientId} (${this.role.toUpperCase()}) 已發送註冊請求。</span>`);
+
+                        // HUB 在 WS 連上後，主動連線所有在線用戶
+                        if (this.role === 'hub') {
+                            this.connectAllOnlineUsers();
+                        }
+                    };
+
+                    this.ws.onmessage = (event) => this._handleWebSocketMessage(event);
+
+                    this.ws.onclose = () => {
+                        this.ui.updateWsStatus('disconnected');
+                        this.ui.appendMessage("<span style='color: red;'>WebSocket 連線已關閉。</span>");
+                        this._scheduleReconnect();
+                    };
+                    
+                    this.ws.onerror = (err) => {
+                        console.error("WebSocket 錯誤:", err);
+                        this.ui.updateWsStatus('disconnected');
+                        this.ws.close();
+                    };
+                }
+                
+                _scheduleReconnect() {
+                    // 檢查 WebSocket 是否真的已關閉
+                    if (!this.ws || this.ws.readyState !== WebSocket.CLOSED) {
+                        return;
+                    }
+                    
+                    // HUB 重連邏輯 (保持不變，HUB 永遠要嘗試重連)
+                    if (this.role === 'hub') {
+                        this.reconnectAttempts++;
+                        this.ui.appendMessage(`<span style='color: red;'>[HUB] 將在 ${this.reconnectInterval / 1000} 秒後嘗試第 ${this.reconnectAttempts} 次重連...</span>`);
+                        setTimeout(() => this._connectWebSocket(), this.reconnectInterval);
+                        return;
+                    } 
+                    
+                    // 🔥 修正：SPOKE 重連邏輯：檢查 DataChannel Map 是否為空
+                    if (this.role === 'spoke') {
+                        // 判斷 dataChannels Map 是否為空（表示沒有任何活躍或準備活躍的 P2P 連線）
+                        if (this.dataChannels.size === 0) {
+                             // 所有 P2P 都斷了，SPOKE 必須重連 WS，等待 HUB 發起 Offer
+                             this.reconnectAttempts++;
+                             this.ui.appendMessage(`<span style='color: red;'>[SPOKE] P2P 斷線，將在 ${this.reconnectInterval / 1000} 秒後嘗試第 ${this.reconnectAttempts} 次重連 WS...</span>`);
+                             setTimeout(() => this._connectWebSocket(), this.reconnectInterval);
+                        } else {
+                             // 仍有 P2P 連線存在，不重連 WS
+                             this.ui.appendMessage("<span style='color: orange;'>[SPOKE] WebSocket 連線已關閉。但仍有 P2P 連線活躍，不重連 WS。</span>");
+                        }
+                    }
+                }
+
+
+                // --- WebSocket 訊息處理 ---
+
+                async _handleWebSocketMessage(event) {
+                    const signal = JSON.parse(event.data);
+                    
+                    if (signal.senderId === this.clientId) return;
+                    
+                    if (signal.type === 'user_joined') {
+                        const newUserId = signal.newUserId;
+                        
+                        if (newUserId !== this.clientId) {
+                            if (this.role === 'hub') {
+                                this.ui.appendMessage(`<span style='color: blue;'>📣 [HUB] 偵測到新用戶 [${newUserId}] 上線，自動發起連線...</span>`);
+                                await this.sendSdpOffer(newUserId); 
+                            } else {
+                                this.ui.appendMessage(`<span style='color: blue;'>📣 [SPOKE] 偵測到新用戶 [${newUserId}] 上線，靜待 Offer。</span>`);
+                            }
+                        }
+                        return;
+                    }
+                    
+                    if (signal.type === 'online_users_list') {
+                        const userIds = signal.users || [];
+                        
+                        if (this.role !== 'hub') return; 
+
+                        this.ui.appendMessage(`<span style='color: purple;'>[HUB] 收到 ${userIds.length} 個在線用戶 ID，開始建立連線...</span>`);
+                        
+                        userIds.forEach(async (targetId) => {
+                            // 修正：檢查是否已經有 P2P 連線在建立或已經開啟
+                            const isConnectingOrOpen = this.dataChannels.has(targetId) && 
+                                (this.dataChannels.get(targetId).readyState === 'open' || 
+                                 this.dataChannels.get(targetId).readyState === 'connecting');
+                                 
+                            if (targetId !== this.clientId && !isConnectingOrOpen) {
+                                console.log(`[HUB] 為目標 ${targetId} 自動發送 Offer...`);
+                                await this.sendSdpOffer(targetId); 
+                            }
+                        });
+                        return;
+                    }
+
+                    const peerId = signal.senderId;
+                    const pc = this._getOrCreatePeerConnection(peerId, false);
+                    
+                    switch (signal.type) {
+                        case 'offer':
+                            await pc.setRemoteDescription(new RTCSessionDescription(signal));
+                            this.ui.updateSdpDisplay('remote', signal);
+                            this._sendSdpAnswer(peerId); 
+                            break;
+                        case 'answer':
+                            if (pc.signalingState === 'stable' && pc.remoteDescription) return; 
+                            await pc.setRemoteDescription(new RTCSessionDescription(signal));
+                            this.ui.updateSdpDisplay('remote', signal);
+                            break;
+                        case 'candidate':
+                            if (signal.candidate) {
+                                try {
+                                    await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+                                } catch (e) {
+                                    console.error("添加 ICE 候選失敗:", e);
+                                }
+                            }
+                            break;
+                    }
+                }
+                
+                // --- WebRTC 連線與協商 ---
+                
+                _getOrCreatePeerConnection(id, isCaller) {
+                    if (this.peerConnections.has(id)) {
+                        return this.peerConnections.get(id);
+                    }
+
+                    const pc = new RTCPeerConnection(this.config);
+                    
+                    pc.onicecandidate = (event) => {
+                        if (event.candidate && this.ws && this.ws.readyState === WebSocket.OPEN) {
+                            this.ws.send(JSON.stringify({
+                                type: 'candidate',
+                                candidate: event.candidate,
+                                senderId: this.clientId,
+                                targetId: id
+                            }));
+                        }
+                    };
+                    
+                    pc.oniceconnectionstatechange = () => {
+                        console.log(`[${id}] ICE Connection State: ${pc.iceConnectionState}`);
+                        const dcState = this.dataChannels.get(id) ? this.dataChannels.get(id).readyState : 'none';
+                        this.ui.updatePeerStatus(id, pc.iceConnectionState, dcState);
+                        
+                        // 🔥 修正點 1: 確保 ICE 失敗或關閉時，清理 Maps 並檢查 SPOKE 是否需要重連 WS
+                        if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'closed') {
+                            const dc = this.dataChannels.get(id);
+                            // 盡可能關閉並清理 DataChannel，以確保 _scheduleReconnect 的判斷正確
+                            if (dc && dc.readyState !== 'closed') {
+                                dc.close(); 
+                            }
+                            
+                            this.peerConnections.delete(id);
+                            this.dataChannels.delete(id);
+
+                            // 如果是 SPOKE 且 WS 已經斷線，則觸發重連檢查
+                            if (this.role === 'spoke' && (!this.ws || this.ws.readyState === WebSocket.CLOSED)) {
+                                this._scheduleReconnect(); 
+                            }
+                        }
+                    };
+                    
+                    if (!isCaller) {
+                        pc.ondatachannel = (event) => {
+                            const channel = event.channel;
+                            this.dataChannels.set(id, channel);
+                            this._setupDataChannel(channel, id); 
+                        };
+                    }
+
+                    this.peerConnections.set(id, pc);
+                    
+                    if (isCaller) {
+                        const channel = pc.createDataChannel('chat');
+                        this.dataChannels.set(id, channel);
+                        this._setupDataChannel(channel, id);
+                    }
+
+                    return pc;
+                }
+
+                _setupDataChannel(channel, id) { 
+                    channel.onopen = () => {
+                        this.ui.appendMessage(`<span style="color: green;">數據通道已連線！與 [${id}]</span>`);
+                        this.ui.updatePeerStatus(id, this.peerConnections.get(id).iceConnectionState, channel.readyState);
+                        
+                        // SPOKE 斷開 WS 邏輯 
+                        if (this.role === 'spoke' && this.ws && this.ws.readyState === WebSocket.OPEN) {
+                            this.ui.appendMessage(`<span style="color: orange;">[SPOKE] P2P 連線成功，正在中斷 WebSocket 信令連線...</span>`);
+                            this.ws.close();
+                        }
+                    };
+                    channel.onmessage = (event) => {
+                        this.ui.appendMessage(`[${id}] 對方: ${event.data}`);
+                    };
+                    channel.onclose = () => {
+                        this.ui.appendMessage(`<span style="color: orange;">[${id}] 數據通道已關閉。</span>`);
+                        this.dataChannels.delete(id);
+                        
+                        // 檢查 PC 是否仍然存在，如果存在則更新 UI
+                        const pc = this.peerConnections.get(id);
+                        if (pc) {
+                            this.ui.updatePeerStatus(id, pc.iceConnectionState, channel.readyState);
+                            
+                            // 即使 DC 關閉，如果 ICE 仍然連線，也要確保觸發清理或重連檢查
+                            if (pc.iceConnectionState === 'connected' && this.role === 'spoke' && this.dataChannels.size === 0) {
+                                // 這是個罕見的情況，理論上 ICE 也會很快斷線，但為了保險，再次檢查重連
+                                this._scheduleReconnect(); 
+                            }
+                        }
+                    }
+                    channel.onerror = (error) => {
+                        this.ui.appendMessage(`<span style="color: red;">[${id}] 數據通道錯誤: ${error.message}</span>`);
+                    }
+                }
+                
+                async sendSdpOffer(targetId) { 
+                    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+                        alert("WebSocket 尚未連線，請先點擊 '設定角色並啟動連線'。");
+                        return;
+                    }
+                    
+                    if (!targetId) {
+                        targetId = prompt("請輸入目標 ID 來發起連線:");
+                        if (!targetId) return;
+                    }
+                    
+                    // 檢查目標連線是否已開啟或正在連線中
+                    const isConnectingOrOpen = this.dataChannels.has(targetId) && 
+                        (this.dataChannels.get(targetId).readyState === 'open' || 
+                         this.dataChannels.get(targetId).readyState === 'connecting');
+
+                    if (isConnectingOrOpen) {
+                        console.warn(`已與 ${targetId} 建立連線或正在連線中，跳過 Offer。`);
+                        return;
+                    }
+                    
+                    let pc = this._getOrCreatePeerConnection(targetId, true); 
+
+                    try {
+                        const offer = await pc.createOffer();
+                        await pc.setLocalDescription(offer);
+                        this.ui.updateSdpDisplay('local', offer);
+                        
+                        const offerWithId = { 
+                            ...offer, 
+                            senderId: this.clientId, 
+                            targetId: targetId 
+                        }; 
+                        this.ws.send(JSON.stringify(offerWithId));
+                        console.log(`Offer 已傳送給 ${targetId}。`);
+                    } catch (error) {
+                        console.error("創建 Offer 失敗:", error);
+                    }
+                }
+
+                async _sendSdpAnswer(targetId) { 
+                    let pc = this.peerConnections.get(targetId); 
+
+                    try {
+                        const answer = await pc.createAnswer();
+                        await pc.setLocalDescription(answer);
+                        this.ui.updateSdpDisplay('local', answer);
+
+                        const answerWithId = { 
+                            ...answer, 
+                            senderId: this.clientId, 
+                            targetId: targetId 
+                        };
+                        this.ws.send(JSON.stringify(answerWithId));
+                        console.log(`Answer 已傳送給 ${targetId}。`);
+                    } catch (error) {
+                        console.error("創建 Answer 失敗:", error);
+                    }
+                }
+                
+                // --- 額外功能 ---
+
+                connectAllOnlineUsers() {
+                    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+                        alert("WebSocket 尚未連線。");
+                        return;
+                    }
+                    
+                    if (this.role !== 'hub') {
+                        this.ui.appendMessage("<span style='color: orange;'>只有 HUB 節點可以使用此功能。</span>");
+                        return;
+                    }
+
+                    const request = {
+                        type: 'request_online_users',
+                        senderId: this.clientId
+                    };
+                    this.ws.send(JSON.stringify(request));
+                    this.ui.appendMessage("<span style='color: purple;'>[HUB] 已向伺服器請求在線用戶列表...</span>");
+                }
+
+                sendChatMessage() {
+                    const message = prompt("請輸入要發送的訊息:");
+                    if (!message) return;
+                    
+                    let sentCount = 0;
+                    
+                    if (this.dataChannels.size === 0) {
+                        alert("尚未與任何用戶連線成功。");
+                        return;
+                    }
+
+                    this.dataChannels.forEach((channel, peerId) => {
+                        if (channel.readyState === 'open') {
+                            channel.send(message); 
+                            sentCount++;
+                        }
+                    });
+
+                    if (sentCount > 0) {
+                        this.ui.appendMessage(`<span style="color: blue;">我 (發送給 ${sentCount} 個連線): ${message}</span>`);
+                    } else {
+                        alert("沒有任何開放的 DataChannel 可以發送訊息。");
+                    }
+                }
+            }
+            
+            return WebRTCClient;
+        })();
+
+
+        // ----------------------------------------------------
+        // 3. 啟動腳本 (主要流程)
+        // ----------------------------------------------------
+        
+        function setRoleAndStart(role) {
+            if (webrtcClient && webrtcClient.ws && webrtcClient.ws.readyState === WebSocket.OPEN) {
+                alert("WebSocket 已連線，請先關閉或重新整理頁面來更換角色。");
+                return;
+            }
+
+            MY_ROLE = role;
+            
+            if (MY_ROLE === 'hub') {
+                MY_CLIENT_ID = HUB_FIXED_ID;
+            } else {
+                MY_CLIENT_ID = 'SPK_' + Math.random().toString(36).substring(2, 9);
+            }
+
+            document.getElementById('clientIdDisplay').textContent = MY_CLIENT_ID;
+            document.getElementById('clientRoleDisplay').textContent = MY_ROLE.toUpperCase();
+            
+            document.getElementById('roleSelection').style.display = 'none';
+            document.getElementById('operations').style.display = 'block';
+
+            // 實例化模組，將 UI Manager 傳遞給它
+            webrtcClient = new WebRTCClientModule(MY_CLIENT_ID, WS_URL, configuration, MY_ROLE, UIManager);
+            webrtcClient.startConnection();
+        }
+        
+        // 初始 UI 狀態
+        UIManager.updateWsStatus('disconnected');
+    </script>
+</body>
+</html>
